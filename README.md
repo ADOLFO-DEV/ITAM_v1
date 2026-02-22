@@ -107,3 +107,5 @@ Si realizas un cambio en la estructura de la base de datos modificando el archiv
 npm run prisma:push
 npm run prisma:generate
 ```
+
+test
