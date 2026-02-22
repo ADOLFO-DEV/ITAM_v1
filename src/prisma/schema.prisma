@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 1. SEGURIDAD Y ROLES
+model SystemUser {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password_hash String
+  nombre        String
+  rol           String   @default("VIEWER") // "SUPERADMIN", "ADMIN", "VIEWER"
+  activo        Boolean  @default(true)
+  created_at    DateTime @default(now())
+}
+
+// 2. EMPLEADOS (Con Segmentación Geográfica)
+model Employee {
+  numero_empleado String  @id
+  nombre_completo String
+  puesto          String?
+  centro_costos   String? 
+  distrito        String? // Ej: "DISTRITO NORTE"
+  tienda          String? // Ej: "8701 - SANTA CATARINA"
+  email           String? @unique
+  estatus_rh      String  @default("ACTIVO") 
+  slots_asignados ServiceSlot[]
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+// 3. SERVICE SLOT (El Activo con Trazabilidad)
+model ServiceSlot {
+  id              String   @id @default(uuid()) 
+  employee_id     String?
+  empleado        Employee? @relation(fields: [employee_id], references: [numero_empleado])
+
+  // Hardware e Ingreso
+  tipo_dispositivo String   @default("SMARTPHONE") 
+  imei            String?   @unique 
+  numero_serie    String?   
+  marca           String?   
+  modelo          String?   
+  numero_factura  String?   
+  costo_compra    Float?    
+  
+  // Línea
+  telefono        String?   @unique 
+  sim_card        String?   
+  proveedor       String    @default("TELCEL") 
+  
+  // Fechas y Estado
+  fecha_asignacion DateTime? 
+  fecha_fin_plan   DateTime? 
+  estatus         String    @default("DISPONIBLE") 
+  
+  logs            AuditLog[]
+  updated_at      DateTime @updatedAt
+}
+
+// 4. HISTORIAL FORENSE
+model AuditLog {
+  id              Int      @id @default(autoincrement())
+  fecha           DateTime @default(now())
+  slot_id         String
+  slot            ServiceSlot @relation(fields: [slot_id], references: [id])
+  accion          String   
+  campo_afectado  String?  
+  valor_anterior  String?  
+  valor_nuevo     String?  
+  usuario_responsable String? 
+}
