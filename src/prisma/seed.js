@@ -124,28 +124,60 @@ async function main() {
       const fechaRenovacion = parseExcelDate(fechaRaw);
 
       // Upsert ServiceSlot
-      await prisma.serviceSlot.upsert({
-        where: { telefono: telefonoLimpio },
-        update: {
-          employee_id: employee.numero_empleado,
-          imei: imeiLimpio,
-          modelo: modelo,
-          gama: gama,
-          sim: sim,
-          fecha_renovacion: fechaRenovacion,
-          estatus: 'ACTIVO'
-        },
-        create: {
-          telefono: telefonoLimpio,
-          employee_id: employee.numero_empleado,
-          imei: imeiLimpio,
-          modelo: modelo,
-          gama: gama,
-          sim: sim,
-          fecha_renovacion: fechaRenovacion,
-          estatus: 'ACTIVO'
+      try {
+        await prisma.serviceSlot.upsert({
+          where: { telefono: telefonoLimpio },
+          update: {
+            employee_id: employee.numero_empleado,
+            imei: imeiLimpio,
+            modelo: modelo,
+            gama: gama,
+            sim: sim,
+            fecha_renovacion: fechaRenovacion,
+            estatus: 'ACTIVO'
+          },
+          create: {
+            telefono: telefonoLimpio,
+            employee_id: employee.numero_empleado,
+            imei: imeiLimpio,
+            modelo: modelo,
+            gama: gama,
+            sim: sim,
+            fecha_renovacion: fechaRenovacion,
+            estatus: 'ACTIVO'
+          }
+        });
+      } catch (upsertError) {
+        // Manejar el error de restricción única en 'imei' (P2002 de Prisma)
+        if (upsertError.code === 'P2002' && upsertError.meta?.target?.includes('imei')) {
+          console.warn(`    ⚠️ IMEI Duplicado detectado (${imeiLimpio}) para el teléfono ${telefonoLimpio}. Guardando sin IMEI...`);
+          await prisma.serviceSlot.upsert({
+            where: { telefono: telefonoLimpio },
+            update: {
+              employee_id: employee.numero_empleado,
+              imei: null, // Forzamos guardar la línea pero sin IMEI conflictivo
+              modelo: modelo,
+              gama: gama,
+              sim: sim,
+              fecha_renovacion: fechaRenovacion,
+              estatus: 'ACTIVO'
+            },
+            create: {
+              telefono: telefonoLimpio,
+              employee_id: employee.numero_empleado,
+              imei: null, // Forzamos guardar la línea pero sin IMEI conflictivo
+              modelo: modelo,
+              gama: gama,
+              sim: sim,
+              fecha_renovacion: fechaRenovacion,
+              estatus: 'ACTIVO'
+            }
+          });
+        } else {
+          // Si es otro tipo de error, lo propagamos para que lo atrape el bloque principal
+          throw upsertError;
         }
-      });
+      }
 
       countProcessed++;
       if (countProcessed % 100 === 0) {
