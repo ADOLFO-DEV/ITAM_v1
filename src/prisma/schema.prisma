@@ -39,24 +39,16 @@ model ServiceSlot {
   employee_id     String?
   empleado        Employee? @relation(fields: [employee_id], references: [numero_empleado])
 
-  // Hardware e Ingreso
-  tipo_dispositivo String   @default("SMARTPHONE") 
+  // Campos actualizados
+  telefono        String    @unique 
   imei            String?   @unique 
-  numero_serie    String?   
-  marca           String?   
   modelo          String?   
-  numero_factura  String?   
-  costo_compra    Float?    
-  
-  // Línea
-  telefono        String?   @unique 
-  sim_card        String?   
-  proveedor       String    @default("TELCEL") 
-  
-  // Fechas y Estado
-  fecha_asignacion DateTime? 
-  fecha_fin_plan   DateTime? 
-  estatus         String    @default("DISPONIBLE") 
+  gama            String?
+  sim             String?
+  estatus         String    @default("ACTIVO") 
+  fecha_inicio    DateTime?
+  fecha_renovacion DateTime?
+
   
   logs            AuditLog[]
   updated_at      DateTime @updatedAt

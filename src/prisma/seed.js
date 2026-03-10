@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 
 function cleanTelefono(tel) {
   if (!tel) return null;
-  const cleaned = String(tel).replace(/\D/g, ''); // Remove all non-numeric characters
+  const cleaned = String(tel).replace(/\D/g, ''); // Eliminar todos los caracteres no numéricos
   if (cleaned.length >= 10) {
-    return cleaned.slice(-10); // Get the last 10 digits
+    return cleaned.slice(-10); // Obtener los últimos 10 dígitos
   }
   return null;
 }
@@ -31,24 +31,15 @@ function buildFullName(nombre, apaterno, amaterno) {
     .toUpperCase();
 }
 
-// Convert Excel serial date to JS Date
-// Excel dates are days since 1900-01-01 (or 1904-01-01 on some Macs, assuming 1900 here)
 function parseExcelDate(excelDate) {
   if (!excelDate) return null;
-  
-  // If it's already a JS Date object, return it
   if (excelDate instanceof Date) return excelDate;
-  
-  // If it's a number (Excel serial)
   if (typeof excelDate === 'number') {
-    // 25569 is the number of days between 1900-01-01 and 1970-01-01
+    // 25569 = dif de días entre 1900-01-01 y 1970-01-01
     return new Date((excelDate - 25569) * 86400 * 1000);
   }
-
-  // Fallback string parsing
   const parsed = new Date(excelDate);
   if (!isNaN(parsed.getTime())) return parsed;
-
   return null;
 }
 
@@ -75,26 +66,33 @@ async function main() {
   }
 
   const data = xlsx.utils.sheet_to_json(worksheet, { defval: null });
-  console.log(`Se encontraron ${data.length} filas en la hoja '${sheetName}'.`);
+  console.log(`Se encontraron ${data.length} filas en la hoja '${sheetName}'.\n`);
 
   let countProcessed = 0;
   let countErrors = 0;
+  let countSkipped = 0;
 
   for (const [index, row] of data.entries()) {
-    const rowNum = index + 2; // +1 for 0-index, +1 for header
+    const rowNum = index + 2; // +1 por base 0-index, +1 por el encabezado
     try {
       const telefonoOriginal = row['TELEFONO'];
       const telefonoLimpio = cleanTelefono(telefonoOriginal);
 
-      if (!telefonoLimpio) {
-        console.warn(`Fila ${rowNum}: Omitida - Teléfono inválido (${telefonoOriginal})`);
-        continue;
+      if (!telefonoLimpio || telefonoLimpio.length !== 10) {
+        console.warn(`⚠️ Fila ${rowNum}: Omitida - Teléfono vacío o inválido (${telefonoOriginal || 'vacío'})`);
+        countSkipped++;
+        continue; // Ignora la fila
       }
 
+      // 1. Normalización de Empleado
       const nomina = cleanNomina(row['NOMINA']);
       const nombreCompleto = buildFullName(row['NOMBRE'], row['APELLIDO PATERNO'], row['APELLIDO MATERNO']);
       const centroCostos = String(row['CC'] || '').trim() || null;
       const tienda = String(row['TIENDA'] || '').trim() || null;
+      
+      // Manejar variante con espacio o sin espacio del excel
+      const distritoRaw = row['DISTRITO '] !== undefined ? row['DISTRITO '] : row['DISTRITO'];
+      const distrito = String(distritoRaw || '').trim() || null;
 
       // Upsert Employee
       const employee = await prisma.employee.upsert({
@@ -103,57 +101,67 @@ async function main() {
           nombre_completo: nombreCompleto,
           centro_costos: centroCostos,
           tienda: tienda,
+          distrito: distrito
         },
         create: {
           numero_empleado: nomina,
           nombre_completo: nombreCompleto,
           centro_costos: centroCostos,
           tienda: tienda,
+          distrito: distrito
         }
       });
 
-      // Prepare ServiceSlot data
-      // IMEI must be exactly unique if it exists, otherwise leave null to avoid unique constraint violations on empty strings
+      // 2. Normalización de Slot
       let imeiLimpio = String(row['IMEI CONSOLA'] || '').trim();
-      if (!imeiLimpio) imeiLimpio = null;
+      if (!imeiLimpio) imeiLimpio = null; // para evitar unique constraint blocks de prisma con strings vacios
 
       const modelo = String(row['MODELO'] || '').trim() || null;
-      const fechaRenovacion = parseExcelDate(row['FECHA DE RENOVACION']);
-
-      // We use telefono as the unique identifier for Upsert per constraints
-      // But wait! Is `telefono` unique in Prisma schema? Yes: `telefono String? @unique`
+      const gama = String(row['GAMA'] || '').trim() || null;
+      const sim = String(row['SIM'] || '').trim() || null;
       
-      const slotData = {
-        employee_id: employee.numero_empleado,
-        imei: imeiLimpio,
-        modelo: modelo,
-        fecha_fin_plan: fechaRenovacion,
-        estatus: 'ASIGNADO' // Assuming active since they are in the sheet, adjust as needed
-      };
+      const fechaRaw = row['FECHA DE RENOVACION '] !== undefined ? row['FECHA DE RENOVACION '] : row['FECHA DE RENOVACION'];
+      const fechaRenovacion = parseExcelDate(fechaRaw);
 
+      // Upsert ServiceSlot
       await prisma.serviceSlot.upsert({
         where: { telefono: telefonoLimpio },
-        update: slotData,
+        update: {
+          employee_id: employee.numero_empleado,
+          imei: imeiLimpio,
+          modelo: modelo,
+          gama: gama,
+          sim: sim,
+          fecha_renovacion: fechaRenovacion,
+          estatus: 'ACTIVO'
+        },
         create: {
           telefono: telefonoLimpio,
-          ...slotData
+          employee_id: employee.numero_empleado,
+          imei: imeiLimpio,
+          modelo: modelo,
+          gama: gama,
+          sim: sim,
+          fecha_renovacion: fechaRenovacion,
+          estatus: 'ACTIVO'
         }
       });
 
       countProcessed++;
       if (countProcessed % 100 === 0) {
-        console.log(`Procesados: ${countProcessed}...`);
+        console.log(`⏳ Progreso: ${countProcessed} registros procesados...`);
       }
 
     } catch (error) {
-      console.error(`Error procesando fila ${rowNum}:`, error.message);
+      console.error(`❌ Error procesando fila ${rowNum}:`, error.message);
       countErrors++;
     }
   }
 
-  console.log('--- Resumen Final ---');
-  console.log(`Total procesados exitosamente: ${countProcessed}`);
-  console.log(`Total errores: ${countErrors}`);
+  console.log('\n--- Resumen Final ---');
+  console.log(`✅ Total procesados exitosamente: ${countProcessed}`);
+  console.log(`⏭️  Total omitidos (teléfono inválido): ${countSkipped}`);
+  console.log(`❌ Total con errores inesperados: ${countErrors}\n`);
 }
 
 main()
