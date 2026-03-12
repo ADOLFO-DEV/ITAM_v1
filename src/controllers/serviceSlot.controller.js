@@ -1,54 +1,149 @@
 const prisma = require('../prisma/client');
+const { z } = require('zod');
 
-// GET /api/activos
-exports.getAllServiceSlots = async (req, res) => {
+// Validation schema for PATCH
+const updateSlotSchema = z.object({
+  modelo: z.string().optional(),
+  gama: z.string().optional(),
+  empleado_id: z.string().optional(), // In the schema, it's actually `employee_id`, I'll map this or use employee_id
+  employee_id: z.string().optional(),
+  estatus: z.string().optional(),
+});
+
+// GET /api/slots
+exports.getAllServiceSlots = async (req, res, next) => {
   try {
-    const slots = await prisma.serviceSlot.findMany({
-      include: {
-        empleado: true
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const { tienda, distrito, gama, search } = req.query;
+
+    let whereClause = {};
+
+    if (gama) whereClause.gama = gama;
+    if (search) {
+      whereClause.OR = [
+        { telefono: { contains: search } },
+        { imei: { contains: search } },
+      ];
+    }
+    
+    // Employee relations for filters (tienda, distrito)
+    if (tienda || distrito) {
+      whereClause.empleado = {};
+      if (tienda) whereClause.empleado.tienda = tienda;
+      if (distrito) whereClause.empleado.distrito = distrito;
+    }
+
+    const [slots, total] = await Promise.all([
+      prisma.serviceSlot.findMany({
+        where: whereClause,
+        skip: offset,
+        take: limit,
+        include: {
+          empleado: true
+        },
+        orderBy: {
+          updated_at: 'desc'
+        }
+      }),
+      prisma.serviceSlot.count({ where: whereClause })
+    ]);
+
+    res.json({
+      data: slots,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
     });
-    res.json(slots);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener activos' });
+    next(error);
   }
 };
 
-// POST /api/activos
-exports.createServiceSlot = async (req, res) => {
-  const { imei, telefono, ...data } = req.body;
-  
+// PATCH /api/slots/:id
+exports.patchServiceSlot = async (req, res, next) => {
+  const { id } = req.params;
+
   try {
-    // Validaciones de unicidad manuales si es necesario, pero Prisma lo maneja con @unique
-    // Sin embargo, para un mensaje más amigable:
-    if (imei) {
-      const existingImei = await prisma.serviceSlot.findUnique({ where: { imei } });
-      if (existingImei) return res.status(400).json({ error: 'El IMEI ya existe' });
-    }
-    if (telefono) {
-      const existingTel = await prisma.serviceSlot.findUnique({ where: { telefono } });
-      if (existingTel) return res.status(400).json({ error: 'El teléfono ya existe' });
+    const validatedData = updateSlotSchema.parse(req.body);
+    
+    // Identify who is making the change, currently hardcoded. In a real app, it would be req.user
+    const usuarioResponsable = 'Sistema';
+
+    // Fetch the existing slot to compare values
+    const currentSlot = await prisma.serviceSlot.findUnique({
+      where: { id }
+    });
+
+    if (!currentSlot) {
+      return res.status(404).json({ success: false, message: 'ServiceSlot not found' });
     }
 
-    const newSlot = await prisma.serviceSlot.create({
-      data: {
-        imei,
-        telefono,
-        ...data
+    // Determine what changed for the AuditLog
+    const auditLogsToCreate = [];
+    for (const key of Object.keys(validatedData)) {
+      if (validatedData[key] !== undefined && validatedData[key] !== currentSlot[key]) {
+        auditLogsToCreate.push({
+          slot_id: id,
+          accion: 'UPDATE',
+          campo_afectado: key,
+          valor_anterior: currentSlot[key] ? String(currentSlot[key]) : null,
+          valor_nuevo: String(validatedData[key]),
+          usuario_responsable: usuarioResponsable
+        });
       }
+    }
+
+    // Execute in a transaction: update the slot and create audit logs
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.serviceSlot.update({
+        where: { id },
+        data: validatedData,
+        include: { empleado: true }
+      });
+
+      if (auditLogsToCreate.length > 0) {
+        await tx.auditLog.createMany({
+          data: auditLogsToCreate
+        });
+      }
+
+      return updated;
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: auditLogsToCreate.length > 0 ? 'Slot updated and logged successfully' : 'No changes were made'
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/slots
+exports.createServiceSlot = async (req, res, next) => {
+  const { imei, telefono, ...data } = req.body;
+  try {
+    const newSlot = await prisma.serviceSlot.create({
+      data: { imei, telefono, ...data }
     });
     res.status(201).json(newSlot);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al crear el activo' });
+    next(error);
   }
 };
 
-// PUT /api/activos/:id
-exports.updateServiceSlot = async (req, res) => {
+// PUT /api/slots/:id
+exports.updateServiceSlot = async (req, res, next) => {
   const { id } = req.params;
   const data = req.body;
-
   try {
     const updatedSlot = await prisma.serviceSlot.update({
       where: { id },
@@ -56,28 +151,17 @@ exports.updateServiceSlot = async (req, res) => {
     });
     res.json(updatedSlot);
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Activo no encontrado' });
-    }
-    console.error(error);
-    res.status(500).json({ error: 'Error al actualizar el activo' });
+    next(error);
   }
 };
 
-// DELETE /api/activos/:id
-exports.deleteServiceSlot = async (req, res) => {
+// DELETE /api/slots/:id
+exports.deleteServiceSlot = async (req, res, next) => {
   const { id } = req.params;
-
   try {
-    await prisma.serviceSlot.delete({
-      where: { id }
-    });
+    await prisma.serviceSlot.delete({ where: { id } });
     res.json({ message: 'Activo eliminado correctamente' });
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Activo no encontrado' });
-    }
-    console.error(error);
-    res.status(500).json({ error: 'Error al eliminar el activo' });
+    next(error);
   }
 };

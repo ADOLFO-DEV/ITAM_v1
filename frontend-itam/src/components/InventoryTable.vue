@@ -1,136 +1,229 @@
-<script setup>
-import { ref, onMounted } from "vue";
-import axios from "axios";
-
-const activos = ref([]);
-const searchQuery = ref("");
-
-onMounted(async () => {
-  try {
-    const response = await axios.get("http://localhost:3000/api/activos");
-    activos.value = response.data;
-  } catch (error) {
-    console.error("Error fetching activos:", error);
-  }
-});
-</script>
-
 <template>
-  <div class="p-6 max-w-7xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">
-        Inventario ITAM Corporativo
-      </h1>
-      <div class="relative w-64">
-        <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="Buscar IMEI, Teléfono..."
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-homedepot-orange"
-        />
-        <svg
-          class="w-5 h-5 text-gray-500 absolute right-3 top-2.5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          ></path>
-        </svg>
+  <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div class="sm:flex sm:items-center sm:justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-900">Inventario Maestro</h2>
+        <p class="mt-2 text-sm text-gray-700">Manejo de equipos telefónicos, SIMs y accesorios asignados.</p>
+      </div>
+      
+      <!-- Quick Filters & Search -->
+      <div class="mt-4 sm:mt-0 sm:flex-none flex items-center space-x-3">
+        <!-- Search -->
+        <div class="relative rounded-md shadow-sm">
+          <input 
+            type="text" 
+            v-model="filters.search" 
+            @keyup.enter="applyFilters"
+            class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6" 
+            placeholder="Buscar IMEI, Teléfono..."
+          />
+        </div>
+        
+        <!-- Gama Filter -->
+        <select v-model="filters.gama" @change="applyFilters" class="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white">
+          <option value="">Todas las Gamas</option>
+          <option value="BAJA">BAJA</option>
+          <option value="MEDIA">MEDIA</option>
+          <option value="ALTA">ALTA</option>
+        </select>
+
+        <button @click="applyFilters" class="rounded-md bg-homedepot-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600">
+          Buscar
+        </button>
       </div>
     </div>
 
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Estatus
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Teléfono
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              IMEI
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Modelo
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Empleado Asignado
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Tienda
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-if="activos.length === 0">
-            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-              Cargando datos o sin resultados...
-            </td>
-          </tr>
-          <tr
-            v-for="activo in activos"
-            :key="activo.id"
-            class="hover:bg-gray-50"
-          >
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-              >
-                {{ activo.estatus }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-              {{ activo.telefono }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ activo.imei }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ activo.modelo }}
-            </td>
-            <td
-              class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-            >
-              {{
-                activo.empleado
-                  ? activo.empleado.nombre_completo
-                  : "Sin Asignar"
-              }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ activo.empleado ? activo.empleado.tienda : "-" }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Table -->
+    <div class="mt-4 flow-root">
+      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+            
+            <div v-if="loading" class="p-8 text-center text-gray-500">
+              Cargando registros...
+            </div>
+            
+            <table v-else class="min-w-full divide-y divide-gray-300">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Teléfono/SIM</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">IMEI</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Equipo</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Empleado / Tienda</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estatus</th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <span class="sr-only">Editar</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50 cursor-pointer transition-colors" @click="openEditModal(item)">
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                    <div class="font-bold">{{ item.telefono || 'Sin Número' }}</div>
+                    <div class="text-gray-500 text-xs mt-1">{{ item.sim || 'Sin SIM' }}</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    {{ item.imei || '--' }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <div class="font-medium text-gray-900">{{ item.modelo || 'Sin Modelo' }}</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ item.gama ? `GAMA ${item.gama}` : '' }}</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <div v-if="item.empleado">
+                      <div class="font-medium text-gray-900">{{ item.empleado.nombre_completo }}</div>
+                      <div class="text-xs text-gray-500 mt-1">{{ item.empleado.tienda || item.empleado.distrito }}</div>
+                    </div>
+                    <div v-else class="text-gray-400 italic">No asignado</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <span :class="getStatusBadgeClass(item.estatus)">
+                      {{ item.estatus }}
+                    </span>
+                  </td>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <button @click.stop="openEditModal(item)" class="text-homedepot-orange hover:text-orange-900 font-semibold">Editar</button>
+                  </td>
+                </tr>
+                <tr v-if="items.length === 0">
+                  <td colspan="6" class="py-8 text-center text-gray-500">No se encontraron resultados para los filtros actuales.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="mt-4 flex justify-end">
-      <button
-        class="bg-homedepot-orange hover:bg-orange-600 text-white font-bold py-2 px-6 rounded transition duration-200"
-      >
-        Exportar Excel
-      </button>
+    <!-- Pagination -->
+    <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-b-lg">
+      <div class="flex flex-1 justify-between sm:hidden">
+        <button @click="changePage(pagination.page - 1)" :disabled="pagination.page === 1" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Previous</button>
+        <button @click="changePage(pagination.page + 1)" :disabled="pagination.page === pagination.totalPages" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Next</button>
+      </div>
+      <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm text-gray-700">
+            Mostrando
+            <span class="font-medium">{{ ((pagination.page - 1) * pagination.limit) + 1 }}</span>
+            al
+            <span class="font-medium">{{ Math.min(pagination.page * pagination.limit, pagination.total) }}</span>
+            de
+            <span class="font-medium">{{ pagination.total }}</span>
+            resultados
+          </p>
+        </div>
+        <div>
+          <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+            <button @click="changePage(pagination.page - 1)" :disabled="pagination.page === 1" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+              <span>Anterior</span>
+            </button>
+            <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
+              Página {{ pagination.page }} de {{ pagination.totalPages }}
+            </span>
+            <button @click="changePage(pagination.page + 1)" :disabled="pagination.page === pagination.totalPages" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+              <span>Siguiente</span>
+            </button>
+          </nav>
+        </div>
+      </div>
     </div>
+
+    <!-- Edit Modal -->
+    <EditSlotModal 
+      :isOpen="isModalOpen" 
+      :slotData="selectedSlot" 
+      @close="isModalOpen = false" 
+      @saved="handleSlotSaved" 
+    />
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted, reactive } from 'vue';
+import EditSlotModal from './EditSlotModal.vue';
+
+const items = ref([]);
+const loading = ref(true);
+
+const isModalOpen = ref(false);
+const selectedSlot = ref(null);
+
+const pagination = reactive({
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 1
+});
+
+const filters = reactive({
+  search: '',
+  gama: '',
+  tienda: '',
+  distrito: ''
+});
+
+const loadData = async () => {
+  loading.value = true;
+  try {
+    const params = new URLSearchParams({
+      page: pagination.page,
+      limit: pagination.limit
+    });
+    
+    if (filters.search) params.append('search', filters.search);
+    if (filters.gama) params.append('gama', filters.gama);
+    if (filters.tienda) params.append('tienda', filters.tienda);
+    if (filters.distrito) params.append('distrito', filters.distrito);
+
+    const res = await fetch(`http://localhost:3000/api/slots?${params.toString()}`);
+    const data = await res.json();
+    
+    items.value = data.data;
+    pagination.total = data.meta.total;
+    pagination.totalPages = data.meta.totalPages;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  loadData();
+});
+
+const applyFilters = () => {
+  pagination.page = 1;
+  loadData();
+};
+
+const changePage = (newPage) => {
+  if (newPage < 1 || newPage > pagination.totalPages) return;
+  pagination.page = newPage;
+  loadData();
+};
+
+const getStatusBadgeClass = (status) => {
+  switch (status?.toUpperCase()) {
+    case 'ACTIVO':
+      return 'inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20';
+    case 'DISPONIBLE':
+      return 'inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20';
+    case 'INACTIVO':
+      return 'inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10';
+    default:
+      return 'inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10';
+  }
+};
+
+const openEditModal = (slot) => {
+  selectedSlot.value = slot;
+  isModalOpen.value = true;
+};
+
+const handleSlotSaved = () => {
+  // Reload current page to see changes
+  loadData();
+};
+</script>
