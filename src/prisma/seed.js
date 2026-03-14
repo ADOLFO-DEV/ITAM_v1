@@ -89,6 +89,7 @@ async function main() {
       const nombreCompleto = buildFullName(row['NOMBRE'], row['APELLIDO PATERNO'], row['APELLIDO MATERNO']);
       const centroCostos = String(row['CC'] || '').trim() || null;
       const tienda = String(row['TIENDA'] || '').trim() || null;
+      const puesto = String(row['Puesto por Asociación'] || '').trim() || null;
       
       // Manejar variante con espacio o sin espacio del excel
       const distritoRaw = row['DISTRITO '] !== undefined ? row['DISTRITO '] : row['DISTRITO'];
@@ -99,6 +100,7 @@ async function main() {
         where: { numero_empleado: nomina },
         update: {
           nombre_completo: nombreCompleto,
+          puesto: puesto,
           centro_costos: centroCostos,
           tienda: tienda,
           distrito: distrito
@@ -106,6 +108,7 @@ async function main() {
         create: {
           numero_empleado: nomina,
           nombre_completo: nombreCompleto,
+          puesto: puesto,
           centro_costos: centroCostos,
           tienda: tienda,
           distrito: distrito
@@ -113,12 +116,18 @@ async function main() {
       });
 
       // 2. Normalización de Slot
-      let imeiLimpio = String(row['IMEI CONSOLA'] || '').trim();
+      const imeiRaw = row['IMEI CONSOLA'] || row['IMEI ADENDUM'] || row['IMEI'];
+      let imeiLimpio = String(imeiRaw || '').trim();
       if (!imeiLimpio) imeiLimpio = null; // para evitar unique constraint blocks de prisma con strings vacios
 
-      const modelo = String(row['MODELO'] || '').trim() || null;
-      const gama = String(row['GAMA'] || '').trim() || null;
-      const sim = String(row['SIM'] || '').trim() || null;
+      const modeloRaw = row[' MODELO CONSOLA '] || row['MODELO CONSOLA'] || row[' MODELO '] || row['MODELO'];
+      const modelo = String(modeloRaw || '').trim() || null;
+      
+      const gamaRaw = row[' GAMA '] || row['GAMA'];
+      const gama = String(gamaRaw || '').trim() || null;
+      
+      const simRaw = row['SIM '] || row['SIM'];
+      const sim = String(simRaw || '').trim() || null;
       
       const fechaRaw = row['FECHA DE RENOVACION '] !== undefined ? row['FECHA DE RENOVACION '] : row['FECHA DE RENOVACION'];
       const fechaRenovacion = parseExcelDate(fechaRaw);
