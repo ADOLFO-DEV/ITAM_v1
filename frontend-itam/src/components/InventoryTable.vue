@@ -142,6 +142,7 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import EditSlotModal from './EditSlotModal.vue';
+import api from '../api/axios';
 
 const items = ref([]);
 const loading = ref(true);
@@ -176,8 +177,8 @@ const loadData = async () => {
     if (filters.tienda) params.append('tienda', filters.tienda);
     if (filters.distrito) params.append('distrito', filters.distrito);
 
-    const res = await fetch(`http://localhost:3000/api/slots?${params.toString()}`);
-    const data = await res.json();
+    const res = await api.get(`/slots?${params.toString()}`);
+    const data = res.data;
     
     items.value = data.data;
     pagination.total = data.meta.total;

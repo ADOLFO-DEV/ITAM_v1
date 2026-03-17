@@ -11,8 +11,13 @@ app.use(express.json());
 
 // Routes
 const serviceSlotRoutes = require("./routes/serviceSlot.routes");
+const statsRoutes = require("./routes/stats.routes");
+const authRoutes = require("./routes/auth.routes");
+const authMiddleware = require("./middlewares/authMiddleware");
 
-app.use("/api/slots", serviceSlotRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/slots", authMiddleware, serviceSlotRoutes);
+app.use("/api/stats", authMiddleware, statsRoutes);
 
 // Health Check
 app.get("/", (req, res) => {

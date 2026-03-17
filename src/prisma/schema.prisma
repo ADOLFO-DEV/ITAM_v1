@@ -46,6 +46,7 @@ model ServiceSlot {
   gama            String?
   sim             String?
   estatus         String    @default("ACTIVO") 
+  costo_compra    Float?
   fecha_inicio    DateTime?
   fecha_renovacion DateTime?
 

@@ -84,6 +84,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import api from '../api/axios';
 
 const props = defineProps({
   isOpen: Boolean,
@@ -123,32 +124,30 @@ const submitForm = async () => {
   errorMsg.value = '';
 
   try {
-    const response = await fetch(`http://localhost:3000/api/slots/${formData.value.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        modelo: formData.value.modelo,
-        gama: formData.value.gama,
-        employee_id: formData.value.employee_id || null,
-        estatus: formData.value.estatus
-      })
+    const response = await api.patch(`/slots/${formData.value.id}`, {
+      modelo: formData.value.modelo,
+      gama: formData.value.gama,
+      employee_id: formData.value.employee_id || null,
+      estatus: formData.value.estatus
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      if (data.errors && data.errors.length) {
-         throw new Error(data.errors.map(e => `${e.path}: ${e.message}`).join(', '));
-      }
-      throw new Error(data.message || data.error || 'Error al actualizar');
-    }
-
+    const data = response.data;
+    
+    // axios throws error if > 399
+    
     emit('saved', data.data);
     emit('close');
   } catch (error) {
-    errorMsg.value = error.message;
+    if (error.response && error.response.data) {
+        const d = error.response.data;
+        if (d.errors && d.errors.length) {
+          errorMsg.value = d.errors.map(e => `${e.path}: ${e.message}`).join(', ');
+        } else {
+          errorMsg.value = d.message || d.error || 'Error al actualizar';
+        }
+    } else {
+       errorMsg.value = error.message;
+    }
   } finally {
     isSaving.value = false;
   }

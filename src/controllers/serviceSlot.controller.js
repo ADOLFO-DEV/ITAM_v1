@@ -165,3 +165,62 @@ exports.deleteServiceSlot = async (req, res, next) => {
     next(error);
   }
 };
+
+// GET /api/stats
+exports.getDashboardStats = async (req, res, next) => {
+  try {
+    const totalSlots = await prisma.serviceSlot.count();
+
+    const activeAvailableSlots = await prisma.serviceSlot.count({
+      where: {
+        estatus: {
+          in: ['ACTIVO', 'DISPONIBLE']
+        }
+      }
+    });
+
+    const sumCostResult = await prisma.serviceSlot.aggregate({
+      _sum: {
+        costo_compra: true
+      }
+    });
+    const totalCostoCompra = sumCostResult._sum.costo_compra || 0;
+
+    const ninetyDaysFromNow = new Date();
+    ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
+
+    const renovacionProxima = await prisma.serviceSlot.count({
+      where: {
+        fecha_renovacion: {
+          lt: ninetyDaysFromNow
+        }
+      }
+    });
+
+    // Grupos por gama para la gráfica
+    const gamaDistribution = await prisma.serviceSlot.groupBy({
+      by: ['gama'],
+      _count: {
+        _all: true
+      }
+    });
+
+    const formatedGama = gamaDistribution.map(item => ({
+      gama: item.gama || 'SIN GAMA',
+      count: item._count._all
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        totalSlots,
+        activeAvailableSlots,
+        totalCostoCompra,
+        renovacionProxima,
+        gamaDistribution: formatedGama
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
