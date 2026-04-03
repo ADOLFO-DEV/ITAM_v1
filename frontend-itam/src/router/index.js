@@ -4,6 +4,7 @@ import Dashboard from '../views/Dashboard.vue';
 import Slots from '../views/Slots.vue';
 import LoginView from '../views/LoginView.vue';
 import Users from '../views/Users.vue';
+import GlobalAuditLogsView from '../views/GlobalAuditLogsView.vue';
 
 const routes = [
   {
@@ -34,6 +35,12 @@ const routes = [
         name: 'Users',
         component: Users,
         meta: { title: 'Gestión de Usuarios' }
+      },
+      {
+        path: 'audit-logs',
+        name: 'AuditLogs',
+        component: GlobalAuditLogsView,
+        meta: { title: 'Historial de Auditoría' }
       }
     ]
   }

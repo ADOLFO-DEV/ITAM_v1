@@ -38,6 +38,17 @@
           <Users class="w-5 h-5" />
           <span class="font-medium">Usuarios</span>
         </router-link>
+
+        <!-- Audit Logs Link (Admin only) -->
+        <router-link
+          v-if="userRole === 'SUPERADMIN' || userRole === 'ADMIN'"
+          to="/audit-logs"
+          class="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-slate-800"
+          active-class="bg-slate-800 text-[#F96302]"
+        >
+          <ClipboardList class="w-5 h-5" />
+          <span class="font-medium">Auditoría</span>
+        </router-link>
       </nav>
 
       <div class="p-4 border-t border-slate-700">
@@ -83,7 +94,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { LayoutDashboard, Smartphone, User, Bell, Users, LogOut } from 'lucide-vue-next';
+import { LayoutDashboard, Smartphone, User, Bell, Users, LogOut, ClipboardList } from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();

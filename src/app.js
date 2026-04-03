@@ -13,11 +13,13 @@ app.use(express.json());
 const serviceSlotRoutes = require("./routes/serviceSlot.routes");
 const statsRoutes = require("./routes/stats.routes");
 const authRoutes = require("./routes/auth.routes");
+const auditRoutes = require("./routes/audit.routes");
 const authMiddleware = require("./middlewares/authMiddleware");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/slots", authMiddleware, serviceSlotRoutes);
 app.use("/api/stats", authMiddleware, statsRoutes);
+app.use("/api/logs", authMiddleware, auditRoutes);
 
 // Health Check
 app.get("/", (req, res) => {

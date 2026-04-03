@@ -6,31 +6,64 @@
         <p class="mt-2 text-sm text-gray-700">Manejo de equipos telefónicos, SIMs y accesorios asignados.</p>
       </div>
       
-      <!-- Quick Filters & Search -->
-      <div class="mt-4 sm:mt-0 sm:flex-none flex items-center space-x-3">
-        <!-- Search -->
-        <div class="relative rounded-md shadow-sm">
-          <input 
-            type="text" 
-            v-model="filters.search" 
-            @keyup.enter="applyFilters"
-            class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6" 
-            placeholder="Buscar IMEI, Teléfono..."
-          />
-        </div>
+      <!-- Search and Filters Section -->
+      <div class="mt-4 sm:mt-0 flex flex-col space-y-3 sm:space-y-0 sm:flex-none">
         
-        <!-- Gama Filter -->
-        <select v-model="filters.gama" @change="applyFilters" class="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white">
-          <option value="">Todas las Gamas</option>
+        <!-- Search -->
+        <div class="flex items-center space-x-3 w-full sm:w-auto self-end">
+           <div class="relative rounded-md shadow-sm w-full sm:w-64">
+             <input type="text" v-model="filters.search" @keyup.enter="applyFilters" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6" placeholder="Buscar IMEI, Teléfono..." />
+           </div>
+           <button @click="applyFilters" class="rounded-md bg-homedepot-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 whitespace-nowrap">
+             Buscar
+           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Filters Panel -->
+    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 bg-gray-50 p-4 rounded-md border border-gray-100">
+      
+      <!-- Gama Filter -->
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Gama</label>
+        <select v-model="filters.gama" @change="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white">
+          <option value="">Todas</option>
           <option value="BAJA">BAJA</option>
           <option value="MEDIA">MEDIA</option>
           <option value="ALTA">ALTA</option>
         </select>
-
-        <button @click="applyFilters" class="rounded-md bg-homedepot-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600">
-          Buscar
-        </button>
       </div>
+
+      <!-- Estatus Filter -->
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Estatus</label>
+        <select v-model="filters.estatus" @change="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white">
+          <option value="">Todos</option>
+          <option value="ACTIVO">ACTIVO</option>
+          <option value="INACTIVO">INACTIVO</option>
+          <option value="DISPONIBLE">DISPONIBLE</option>
+        </select>
+      </div>
+
+      <!-- Modelo Filter -->
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Modelo</label>
+        <input type="text" v-model="filters.modelo" @keyup.enter="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white" placeholder="Ej: iPhone 13" />
+      </div>
+
+      <!-- Empleado Filter -->
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Empleado</label>
+        <input type="text" v-model="filters.empleado" @keyup.enter="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white" placeholder="Nombre o Num" />
+      </div>
+
+      <!-- Tienda Filter -->
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Tienda / Distrito</label>
+        <input type="text" v-model="filters.tienda" @keyup.enter="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white" placeholder="Ej: 8848" />
+      </div>
+
     </div>
 
     <!-- Table -->
@@ -49,7 +82,8 @@
                   <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Teléfono/SIM</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">IMEI</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Equipo</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Empleado / Tienda</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Empleado</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tienda / Distrito</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estatus</th>
                   <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
                     <span class="sr-only">Editar</span>
@@ -72,9 +106,16 @@
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <div v-if="item.empleado">
                       <div class="font-medium text-gray-900">{{ item.empleado.nombre_completo }}</div>
-                      <div class="text-xs text-gray-500 mt-1">{{ item.empleado.tienda || item.empleado.distrito }}</div>
+                      <div class="text-xs text-gray-500 mt-1">Num: {{ item.empleado.numero_empleado }}</div>
                     </div>
                     <div v-else class="text-gray-400 italic">No asignado</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <div v-if="item.empleado">
+                      <div class="font-medium text-gray-900">{{ item.empleado.tienda || '--' }}</div>
+                      <div class="text-xs text-gray-500 mt-1">{{ item.empleado.distrito || '--' }}</div>
+                    </div>
+                    <div v-else class="text-gray-400 italic">--</div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <span :class="getStatusBadgeClass(item.estatus)">
@@ -160,6 +201,9 @@ const pagination = reactive({
 const filters = reactive({
   search: '',
   gama: '',
+  estatus: '',
+  modelo: '',
+  empleado: '',
   tienda: '',
   distrito: ''
 });
@@ -174,6 +218,9 @@ const loadData = async () => {
     
     if (filters.search) params.append('search', filters.search);
     if (filters.gama) params.append('gama', filters.gama);
+    if (filters.estatus) params.append('estatus', filters.estatus);
+    if (filters.modelo) params.append('modelo', filters.modelo);
+    if (filters.empleado) params.append('empleado', filters.empleado);
     if (filters.tienda) params.append('tienda', filters.tienda);
     if (filters.distrito) params.append('distrito', filters.distrito);
 

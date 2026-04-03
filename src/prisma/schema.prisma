@@ -67,3 +67,8 @@ model AuditLog {
   valor_nuevo     String?  
   usuario_responsable String? 
 }
+
+// 5. GENERADOR DE DIAGRAMA ERD
+generator erd {
+  provider = "prisma-erd-generator" 
+}

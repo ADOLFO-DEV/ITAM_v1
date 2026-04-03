@@ -29,5 +29,9 @@
   "prisma": {
     "schema": "src/prisma/schema.prisma",
     "seed": "node src/prisma/seed.js"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.12.0",
+    "prisma-erd-generator": "^2.4.2"
   }
 }

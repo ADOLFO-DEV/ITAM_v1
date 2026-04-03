@@ -1,5 +1,6 @@
 const prisma = require('../prisma/client');
 const { z } = require('zod');
+const auditService = require('../services/auditService');
 
 // Validation schema for PATCH
 const updateSlotSchema = z.object({
@@ -17,11 +18,14 @@ exports.getAllServiceSlots = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    const { tienda, distrito, gama, search } = req.query;
+    const { tienda, distrito, gama, search, estatus, modelo, empleado } = req.query;
 
     let whereClause = {};
 
     if (gama) whereClause.gama = gama;
+    if (estatus) whereClause.estatus = estatus;
+    if (modelo) whereClause.modelo = { contains: modelo };
+    
     if (search) {
       whereClause.OR = [
         { telefono: { contains: search } },
@@ -29,11 +33,17 @@ exports.getAllServiceSlots = async (req, res, next) => {
       ];
     }
     
-    // Employee relations for filters (tienda, distrito)
-    if (tienda || distrito) {
+    // Employee relations for filters (tienda, distrito, empleado)
+    if (tienda || distrito || empleado) {
       whereClause.empleado = {};
-      if (tienda) whereClause.empleado.tienda = tienda;
-      if (distrito) whereClause.empleado.distrito = distrito;
+      if (tienda) whereClause.empleado.tienda = { contains: tienda };
+      if (distrito) whereClause.empleado.distrito = { contains: distrito };
+      if (empleado) {
+        whereClause.empleado.OR = [
+          { nombre_completo: { contains: empleado } },
+          { numero_empleado: { contains: empleado } }
+        ];
+      }
     }
 
     const [slots, total] = await Promise.all([
@@ -84,42 +94,32 @@ exports.patchServiceSlot = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'ServiceSlot not found' });
     }
 
-    // Determine what changed for the AuditLog
-    const auditLogsToCreate = [];
-    for (const key of Object.keys(validatedData)) {
-      if (validatedData[key] !== undefined && validatedData[key] !== currentSlot[key]) {
-        auditLogsToCreate.push({
-          slot_id: id,
-          accion: 'UPDATE',
-          campo_afectado: key,
-          valor_anterior: currentSlot[key] ? String(currentSlot[key]) : null,
-          valor_nuevo: String(validatedData[key]),
-          usuario_responsable: usuarioResponsable
-        });
-      }
-    }
-
     // Execute in a transaction: update the slot and create audit logs
     const result = await prisma.$transaction(async (tx) => {
+      // Registrar cambios en logs usando el nuevo auditService
+      const changesCount = await auditService.recordChange(
+        tx,
+        id,
+        usuarioResponsable,
+        currentSlot,
+        validatedData
+      );
+
       const updated = await tx.serviceSlot.update({
         where: { id },
         data: validatedData,
         include: { empleado: true }
       });
 
-      if (auditLogsToCreate.length > 0) {
-        await tx.auditLog.createMany({
-          data: auditLogsToCreate
-        });
-      }
-
+      // Retornar información adicional si hubo cambios
+      updated._logsCreated = changesCount;
       return updated;
     });
 
     res.json({
       success: true,
       data: result,
-      message: auditLogsToCreate.length > 0 ? 'Slot updated and logged successfully' : 'No changes were made'
+      message: result._logsCreated > 0 ? 'Slot updated and logged successfully' : 'No changes were made to log'
     });
 
   } catch (error) {
