@@ -22,7 +22,7 @@
     </div>
 
     <!-- Advanced Filters Panel -->
-    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 bg-gray-50 p-4 rounded-md border border-gray-100">
+    <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 bg-gray-50 p-4 rounded-md border border-gray-100">
       
       <!-- Gama Filter -->
       <div>
@@ -60,8 +60,20 @@
 
       <!-- Tienda Filter -->
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">Tienda / Distrito</label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Tienda (C.C.)</label>
         <input type="text" v-model="filters.tienda" @keyup.enter="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white" placeholder="Ej: 8848" />
+      </div>
+
+      <!-- Distrito Filter -->
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Distrito</label>
+        <input type="text" v-model="filters.distrito" @keyup.enter="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white" placeholder="Ej: NORTE" />
+      </div>
+
+      <!-- Puesto Filter -->
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Puesto</label>
+        <input type="text" v-model="filters.puesto" @keyup.enter="applyFilters" class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6 bg-white" placeholder="Ej: GERENTE" />
       </div>
 
     </div>
@@ -107,6 +119,7 @@
                     <div v-if="item.empleado">
                       <div class="font-medium text-gray-900">{{ item.empleado.nombre_completo }}</div>
                       <div class="text-xs text-gray-500 mt-1">Num: {{ item.empleado.numero_empleado }}</div>
+                      <div class="text-[10px] text-gray-400 uppercase mt-0.5 font-bold tracking-wide" v-if="item.empleado.puesto">{{ item.empleado.puesto }}</div>
                     </div>
                     <div v-else class="text-gray-400 italic">No asignado</div>
                   </td>
@@ -205,7 +218,8 @@ const filters = reactive({
   modelo: '',
   empleado: '',
   tienda: '',
-  distrito: ''
+  distrito: '',
+  puesto: ''
 });
 
 const loadData = async () => {
@@ -223,6 +237,7 @@ const loadData = async () => {
     if (filters.empleado) params.append('empleado', filters.empleado);
     if (filters.tienda) params.append('tienda', filters.tienda);
     if (filters.distrito) params.append('distrito', filters.distrito);
+    if (filters.puesto) params.append('puesto', filters.puesto);
 
     const res = await api.get(`/slots?${params.toString()}`);
     const data = res.data;

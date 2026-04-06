@@ -19,7 +19,7 @@ exports.getAllServiceSlots = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    const { tienda, distrito, gama, search, estatus, modelo, empleado } = req.query;
+    const { tienda, distrito, gama, search, estatus, modelo, empleado, puesto } = req.query;
 
     let whereClause = {};
 
@@ -34,11 +34,14 @@ exports.getAllServiceSlots = async (req, res, next) => {
       ];
     }
     
-    // Employee relations for filters (tienda, distrito, empleado)
-    if (tienda || distrito || empleado) {
+    // Filtros relaciones de empleado (incluye el nuevo campo Puesto)
+    if (tienda || distrito || empleado || puesto) {
       whereClause.empleado = {};
+      
       if (tienda) whereClause.empleado.tienda = { contains: tienda };
       if (distrito) whereClause.empleado.distrito = { contains: distrito };
+      if (puesto) whereClause.empleado.puesto = { contains: puesto };
+      
       if (empleado) {
         whereClause.empleado.OR = [
           { nombre_completo: { contains: empleado } },
