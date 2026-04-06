@@ -5,6 +5,7 @@ import Slots from '../views/Slots.vue';
 import LoginView from '../views/LoginView.vue';
 import Users from '../views/Users.vue';
 import GlobalAuditLogsView from '../views/GlobalAuditLogsView.vue';
+import HeadcountSyncView from '../views/HeadcountSyncView.vue';
 
 const routes = [
   {
@@ -41,6 +42,12 @@ const routes = [
         name: 'AuditLogs',
         component: GlobalAuditLogsView,
         meta: { title: 'Historial de Auditoría' }
+      },
+      {
+        path: 'sync-headcount',
+        name: 'SyncHeadcount',
+        component: HeadcountSyncView,
+        meta: { title: 'Sincronizar Headcount' }
       }
     ]
   }

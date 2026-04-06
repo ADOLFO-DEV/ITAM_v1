@@ -49,6 +49,17 @@
           <ClipboardList class="w-5 h-5" />
           <span class="font-medium">Auditoría</span>
         </router-link>
+
+        <!-- Sync Headcount Link (Admin only) -->
+        <router-link
+          v-if="userRole === 'SUPERADMIN' || userRole === 'ADMIN'"
+          to="/sync-headcount"
+          class="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-slate-800"
+          active-class="bg-slate-800 text-[#F96302]"
+        >
+          <Users class="w-5 h-5" />
+          <span class="font-medium">Sync Headcount</span>
+        </router-link>
       </nav>
 
       <div class="p-4 border-t border-slate-700">
