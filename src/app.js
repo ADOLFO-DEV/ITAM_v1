@@ -14,12 +14,14 @@ const serviceSlotRoutes = require("./routes/serviceSlot.routes");
 const statsRoutes = require("./routes/stats.routes");
 const authRoutes = require("./routes/auth.routes");
 const auditRoutes = require("./routes/audit.routes");
+const employeeRoutes = require("./routes/employee.routes");
 const authMiddleware = require("./middlewares/authMiddleware");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/slots", authMiddleware, serviceSlotRoutes);
 app.use("/api/stats", authMiddleware, statsRoutes);
 app.use("/api/logs", authMiddleware, auditRoutes);
+app.use("/api/employees", authMiddleware, employeeRoutes);
 
 // Health Check
 app.get("/", (req, res) => {
