@@ -2,14 +2,15 @@ const prisma = require('../prisma/client');
 const { z } = require('zod');
 const auditService = require('../services/auditService');
 
-// Validation schema for PATCH
+// Esquema de Validación (Zod): updateSlotSchema con partial()
 const updateSlotSchema = z.object({
-  modelo: z.string().optional(),
-  gama: z.string().optional(),
-  empleado_id: z.string().optional(), // In the schema, it's actually `employee_id`, I'll map this or use employee_id
-  employee_id: z.string().optional(),
-  estatus: z.string().optional(),
-});
+  modelo: z.string(),
+  imei: z.string(),
+  estatus: z.string(),
+  centro_costos: z.string(),
+  sim: z.string(),
+  employee_id: z.string(),
+}).partial();
 
 // GET /api/slots
 exports.getAllServiceSlots = async (req, res, next) => {
@@ -79,47 +80,102 @@ exports.getAllServiceSlots = async (req, res, next) => {
 exports.patchServiceSlot = async (req, res, next) => {
   const { id } = req.params;
 
-  try {
-    const validatedData = updateSlotSchema.parse(req.body);
-    
-    // Identify who is making the change, currently hardcoded. In a real app, it would be req.user
-    const usuarioResponsable = 'Sistema';
+  // Validación Zod manual para responder con 400 si falla
+  const validationResult = updateSlotSchema.safeParse(req.body);
+  if (!validationResult.success) {
+    return res.status(400).json({
+      success: false,
+      message: 'Error de validación (Zod)',
+      details: validationResult.error.errors
+    });
+  }
 
-    // Fetch the existing slot to compare values
-    const currentSlot = await prisma.serviceSlot.findUnique({
-      where: { id }
+  const validatedData = validationResult.data;
+
+  try {
+    const usuarioResponsable = 'Sistema'; // Aquí normalmente usaríamos req.user
+
+    // 1. Obtener estado actual del activo (oldData) incluyendo el empleado
+    const oldData = await prisma.serviceSlot.findUnique({
+      where: { id },
+      include: { empleado: true }
     });
 
-    if (!currentSlot) {
-      return res.status(404).json({ success: false, message: 'ServiceSlot not found' });
+    // 2. Respuesta 404 si el ID no existe
+    if (!oldData) {
+      return res.status(404).json({
+        success: false,
+        message: 'ServiceSlot no encontrado'
+      });
     }
 
-    // Execute in a transaction: update the slot and create audit logs
+    // 3. Transacción Atómica
     const result = await prisma.$transaction(async (tx) => {
-      // Registrar cambios en logs usando el nuevo auditService
-      const changesCount = await auditService.recordChange(
-        tx,
-        id,
-        usuarioResponsable,
-        currentSlot,
-        validatedData
-      );
+      const auditLogsToCreate = [];
 
-      const updated = await tx.serviceSlot.update({
+      // Extraer centro_costos, que es propiedad de Employee, no de ServiceSlot
+      const { centro_costos, ...slotData } = validatedData;
+      const fieldsToCompare = Object.keys(validatedData);
+
+      // 4. Lógica de Auditoría: Comparar campo por campo
+      for (const field of fieldsToCompare) {
+        let oldValue = oldData[field];
+        let newValue = validatedData[field];
+
+        // Manejo especial de centro_costos
+        if (field === 'centro_costos') {
+          oldValue = oldData.empleado ? oldData.empleado.centro_costos : null;
+        }
+
+        // Normalizar valores para comparar (evitar false positives con null vs undefined)
+        const strOld = oldValue !== null && oldValue !== undefined ? String(oldValue) : '';
+        const strNew = newValue !== null && newValue !== undefined ? String(newValue) : '';
+
+        // Si hay un cambio, preparar la entrada para la tabla AuditLog
+        if (strOld !== strNew) {
+          auditLogsToCreate.push({
+            slot_id: id,
+            accion: field === 'employee_id' ? 'REASSIGN' : 'UPDATE',
+            campo_afectado: field,
+            valor_anterior: strOld || 'N/A',
+            valor_nuevo: strNew || 'N/A',
+            usuario_responsable: usuarioResponsable
+          });
+        }
+      }
+
+      // Ejecutar la actualización del ServiceSlot (activo)
+      const updatedSlot = await tx.serviceSlot.update({
         where: { id },
-        data: validatedData,
+        data: slotData,
         include: { empleado: true }
       });
 
-      // Retornar información adicional si hubo cambios
-      updated._logsCreated = changesCount;
-      return updated;
+      // Si se proporcionó centro_costos y hay un empleado asociado, actualizar su registro
+      if (centro_costos !== undefined && updatedSlot.employee_id) {
+        await tx.employee.update({
+          where: { numero_empleado: updatedSlot.employee_id },
+          data: { centro_costos }
+        });
+        // Reflejar la actualización en la respuesta del slot
+        updatedSlot.empleado.centro_costos = centro_costos;
+      }
+
+      // Guardar todos los registros de auditoría al mismo tiempo
+      if (auditLogsToCreate.length > 0) {
+        await tx.auditLog.createMany({
+          data: auditLogsToCreate
+        });
+      }
+
+      return updatedSlot;
     });
 
-    res.json({
+    // 5. Respuesta 200 con el objeto actualizado si todo es correcto
+    return res.status(200).json({
       success: true,
       data: result,
-      message: result._logsCreated > 0 ? 'Slot updated and logged successfully' : 'No changes were made to log'
+      message: 'Activo actualizado con éxito'
     });
 
   } catch (error) {
