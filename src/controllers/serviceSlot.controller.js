@@ -10,6 +10,7 @@ const updateSlotSchema = z.object({
   centro_costos: z.string(),
   sim: z.string(),
   employee_id: z.string(),
+  telefono: z.string().length(10, 'El teléfono debe tener exactamente 10 dígitos'),
 }).partial();
 
 // GET /api/slots
@@ -118,6 +119,24 @@ exports.patchServiceSlot = async (req, res, next) => {
 
       // Extraer centro_costos, que es propiedad de Employee, no de ServiceSlot
       const { centro_costos, ...slotData } = validatedData;
+
+      // Lógica de unicidad de teléfono
+      if (slotData.telefono && slotData.telefono !== oldData.telefono) {
+        const duplicateSlot = await tx.serviceSlot.findFirst({
+          where: {
+            telefono: slotData.telefono,
+            estatus: { in: ['ACTIVO', 'DISPONIBLE'] },
+            id: { not: id }
+          }
+        });
+        
+        if (duplicateSlot) {
+          const error = new Error('El número telefónico ya está asignado a otro activo');
+          error.status = 409;
+          throw error;
+        }
+      }
+
       const fieldsToCompare = Object.keys(validatedData);
 
       // 4. Lógica de Auditoría: Comparar campo por campo
@@ -182,6 +201,12 @@ exports.patchServiceSlot = async (req, res, next) => {
     });
 
   } catch (error) {
+    if (error.status === 409) {
+      return res.status(409).json({
+        success: false,
+        message: error.message
+      });
+    }
     next(error);
   }
 };
