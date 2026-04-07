@@ -11,6 +11,9 @@ const updateSlotSchema = z.object({
   sim: z.string(),
   employee_id: z.string(),
   telefono: z.string().length(10, 'El teléfono debe tener exactamente 10 dígitos'),
+  fecha_inicio: z.union([z.date(), z.string().datetime()]).optional(),
+  fecha_renovacion: z.coerce.date().optional(),
+  correo: z.string().email('El correo debe tener un formato válido').optional().or(z.literal('')),
 }).partial();
 
 // GET /api/slots
@@ -117,8 +120,12 @@ exports.patchServiceSlot = async (req, res, next) => {
     const result = await prisma.$transaction(async (tx) => {
       const auditLogsToCreate = [];
 
-      // Extraer centro_costos, que es propiedad de Employee, no de ServiceSlot
-      const { centro_costos, ...slotData } = validatedData;
+      // Extraer centro_costos y correo, que son propiedades de Employee, no de ServiceSlot
+      const { centro_costos, correo, ...slotData } = validatedData;
+
+      // Asegurarse de que las fechas sean objetos Date para evitar problemas en Prisma
+      if (slotData.fecha_inicio) slotData.fecha_inicio = new Date(slotData.fecha_inicio);
+      if (slotData.fecha_renovacion) slotData.fecha_renovacion = new Date(slotData.fecha_renovacion);
 
       // Lógica de unicidad de teléfono
       if (slotData.telefono && slotData.telefono !== oldData.telefono) {
@@ -144,14 +151,16 @@ exports.patchServiceSlot = async (req, res, next) => {
         let oldValue = oldData[field];
         let newValue = validatedData[field];
 
-        // Manejo especial de centro_costos
+        // Manejo especial de centro_costos y correo
         if (field === 'centro_costos') {
           oldValue = oldData.empleado ? oldData.empleado.centro_costos : null;
+        } else if (field === 'correo') {
+          oldValue = oldData.empleado ? oldData.empleado.email : null;
         }
 
         // Normalizar valores para comparar (evitar false positives con null vs undefined)
-        const strOld = oldValue !== null && oldValue !== undefined ? String(oldValue) : '';
-        const strNew = newValue !== null && newValue !== undefined ? String(newValue) : '';
+        const strOld = oldValue !== null && oldValue !== undefined ? (oldValue instanceof Date ? oldValue.toISOString() : String(oldValue)) : '';
+        const strNew = newValue !== null && newValue !== undefined ? (newValue instanceof Date ? newValue.toISOString() : String(newValue)) : '';
 
         // Si hay un cambio, preparar la entrada para la tabla AuditLog
         if (strOld !== strNew) {
@@ -173,14 +182,21 @@ exports.patchServiceSlot = async (req, res, next) => {
         include: { empleado: true }
       });
 
-      // Si se proporcionó centro_costos y hay un empleado asociado, actualizar su registro
-      if (centro_costos !== undefined && updatedSlot.employee_id) {
-        await tx.employee.update({
-          where: { numero_empleado: updatedSlot.employee_id },
-          data: { centro_costos }
-        });
+      // Si se proporcionó centro_costos o correo y hay un empleado asociado, actualizar su registro
+      if ((centro_costos !== undefined || correo !== undefined) && updatedSlot.employee_id) {
+        const employeeUpdateData = {};
+        if (centro_costos !== undefined) employeeUpdateData.centro_costos = centro_costos;
+        if (correo !== undefined && correo !== '') employeeUpdateData.email = correo;
+
+        if (Object.keys(employeeUpdateData).length > 0) {
+          await tx.employee.update({
+            where: { numero_empleado: updatedSlot.employee_id },
+            data: employeeUpdateData
+          });
+        }
         // Reflejar la actualización en la respuesta del slot
-        updatedSlot.empleado.centro_costos = centro_costos;
+        if (centro_costos !== undefined) updatedSlot.empleado.centro_costos = centro_costos;
+        if (correo !== undefined && correo !== '') updatedSlot.empleado.email = correo;
       }
 
       // Guardar todos los registros de auditoría al mismo tiempo

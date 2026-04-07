@@ -102,6 +102,30 @@
                     <p class="text-[10px] text-slate-400 mt-1">* Se modificará para el empleado asignado.</p>
                   </div>
                   
+                  <!-- Correo -->
+                  <div class="sm:col-span-1" v-if="formData.employee_id">
+                    <label class="block text-sm font-semibold leading-6 text-slate-700">Correo (Empleado)</label>
+                    <div class="mt-2 text-slate-400 relative">
+                      <input type="email" v-model="formData.correo" placeholder="ejemplo@institucion.mx" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 pr-10 transition-all hover:bg-slate-50/50" />
+                    </div>
+                  </div>
+
+                  <!-- Fecha de Inicio -->
+                  <div class="sm:col-span-1">
+                    <label class="block text-sm font-semibold leading-6 text-slate-700">Fecha de Inicio</label>
+                    <div class="mt-2">
+                       <input type="date" v-model="formData.fecha_inicio" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                    </div>
+                  </div>
+
+                  <!-- Fecha de Renovación -->
+                  <div class="sm:col-span-1">
+                    <label class="block text-sm font-semibold leading-6 text-slate-700">Próxima Renovación</label>
+                    <div class="mt-2">
+                       <input type="date" v-model="formData.fecha_renovacion" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                    </div>
+                  </div>
+                  
                   <!-- Estatus -->
                   <div class="sm:col-span-2 border-t border-slate-100 pt-5 mt-2">
                     <label class="block text-sm font-semibold leading-6 text-slate-700 mb-3">Estatus del Activo</label>
@@ -165,7 +189,6 @@ const activeTab = ref('editar');
 const isSaving = ref(false);
 const errorMsg = ref('');
 
-// Estado reactivo del formulario
 const formData = reactive({
   id: '',
   telefono: '',
@@ -173,9 +196,12 @@ const formData = reactive({
   imei: '',
   sim: '',
   centro_costos: '',
+  correo: '',
   gama: '',
   employee_id: '',
-  estatus: 'ACTIVO'
+  estatus: 'ACTIVO',
+  fecha_inicio: '',
+  fecha_renovacion: ''
 });
 
 // Guardar el estado original para calcular los cambios (Patch)
@@ -187,6 +213,13 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     if (props.slotData && props.slotData.id) {
       // Edición Unitaria
+      const formatDateForInput = (isoString) => {
+        if (!isoString) return '';
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return '';
+        return d.toISOString().split('T')[0];
+      };
+
       const initial = {
         id: props.slotData.id,
         telefono: props.slotData.telefono || '',
@@ -194,9 +227,12 @@ watch(() => props.isOpen, (newVal) => {
         imei: props.slotData.imei || '',
         sim: props.slotData.sim || '',
         centro_costos: props.slotData.empleado?.centro_costos || '',
+        correo: props.slotData.empleado?.email || '',
         gama: props.slotData.gama || '',
         employee_id: props.slotData.employee_id || '',
-        estatus: props.slotData.estatus || 'ACTIVO'
+        estatus: props.slotData.estatus || 'ACTIVO',
+        fecha_inicio: formatDateForInput(props.slotData.fecha_inicio),
+        fecha_renovacion: formatDateForInput(props.slotData.fecha_renovacion)
       };
       
       Object.assign(formData, initial);
@@ -211,9 +247,12 @@ watch(() => props.isOpen, (newVal) => {
         imei: '',
         sim: '',
         centro_costos: '',
+        correo: '',
         gama: '',
         employee_id: '',
-        estatus: 'DISPONIBLE'
+        estatus: 'DISPONIBLE',
+        fecha_inicio: '',
+        fecha_renovacion: ''
       });
       originalData.value = {};
       activeTab.value = 'editar';

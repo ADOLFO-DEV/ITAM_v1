@@ -99,6 +99,7 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">IMEI</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Equipo</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Empleado</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tienda / Distrito</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estatus</th>
                   <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -122,10 +123,20 @@
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <div v-if="item.empleado">
                       <div class="font-medium text-gray-900">{{ item.empleado.nombre_completo }}</div>
+                      <div class="text-xs text-gray-500 mt-1" v-if="item.empleado.email">{{ item.empleado.email }}</div>
+                      <div class="text-xs text-gray-500 mt-1" v-else>Sin correo</div>
                       <div class="text-xs text-gray-500 mt-1">Num: {{ item.empleado.numero_empleado }}</div>
                       <div class="text-[10px] text-gray-400 uppercase mt-0.5 font-bold tracking-wide" v-if="item.empleado.puesto">{{ item.empleado.puesto }}</div>
                     </div>
                     <div v-else class="text-gray-400 italic">No asignado</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <div class="text-xs">
+                      <span class="font-medium text-gray-700">Inicio:</span> {{ formatDate(item.fecha_inicio) }}
+                    </div>
+                    <div class="text-xs mt-1">
+                      <span class="font-medium text-gray-700">Renov:</span> {{ formatDate(item.fecha_renovacion) }}
+                    </div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <div v-if="item.empleado">
@@ -201,6 +212,21 @@
 import { ref, onMounted, reactive } from 'vue';
 import EditSlotModal from './EditSlotModal.vue';
 import api from '../api/axios';
+
+const formatDate = (dateString) => {
+  if (!dateString) return '--';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '--';
+    return new Intl.DateTimeFormat('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
+  } catch (error) {
+    return '--';
+  }
+};
 
 const items = ref([]);
 const loading = ref(true);
