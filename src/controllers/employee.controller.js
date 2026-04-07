@@ -6,26 +6,33 @@ const { z } = require("zod");
 // Define a flexible schema to handle potential variations in column names
 const employeeRowSchema = z
   .object({
-    "Numero de Empleado": z.union([z.string(), z.number()]).transform(String),
+    "Numero de Empleado": z.union([z.string(), z.number()]).transform(String).optional(),
+    "Número de Empleado": z.union([z.string(), z.number()]).transform(String).optional(),
+    "Número de empleado": z.union([z.string(), z.number()]).transform(String).optional(),
+    numero_empleado: z.union([z.string(), z.number()]).transform(String).optional(),
     Nombre: z.string().optional().default(""),
     "Apellido Paterno": z.string().optional().default(""),
     "Apellido Materno": z.string().optional().default(""),
     // Optional fallback columns in case of slight variations
-    numero_empleado: z.union([z.string(), z.number()]).transform(String).optional(),
-    nombre_completo: z.string().optional(),
-    puesto: z.string().optional(),
-    Puesto: z.string().optional(),
-    "Centro de Costos": z.string().optional(),
-    centro_costos: z.string().optional(),
-    Distrito: z.string().optional(),
-    distrito: z.string().optional(),
-    Tienda: z.string().optional(),
-    tienda: z.string().optional(),
+    nombre_completo: z.union([z.string(), z.number()]).transform(String).optional(),
+    puesto: z.union([z.string(), z.number()]).transform(String).optional(),
+    Puesto: z.union([z.string(), z.number()]).transform(String).optional(),
+    "Posición": z.union([z.string(), z.number()]).transform(String).optional(),
+    "Centro de Costos": z.union([z.string(), z.number()]).transform(String).optional(),
+    centro_costos: z.union([z.string(), z.number()]).transform(String).optional(),
+    Distrito: z.union([z.string(), z.number()]).transform(String).optional(),
+    distrito: z.union([z.string(), z.number()]).transform(String).optional(),
+    "Atributo Distrito": z.union([z.string(), z.number()]).transform(String).optional(),
+    Tienda: z.union([z.string(), z.number()]).transform(String).optional(),
+    tienda: z.union([z.string(), z.number()]).transform(String).optional(),
+    "Atributo Tienda": z.union([z.string(), z.number()]).transform(String).optional(),
   })
   // After passing structure validation, refine and map down to what we need
   .transform((data) => {
-    // Determine the employee number prioritizing "Numero de Empleado"
-    const numero_empleado = (data["Numero de Empleado"] || data.numero_empleado || "").trim();
+    // Determine the employee number prioritizing all variations
+    let numero_empleado = data["Número de Empleado"] || data["Número de empleado"] || data["Numero de Empleado"] || data.numero_empleado || "";
+    if (typeof numero_empleado === 'number') numero_empleado = String(numero_empleado);
+    else if (typeof numero_empleado === 'string') numero_empleado = numero_empleado.trim();
 
     // Determine the full name
     let nombre_completo = data.nombre_completo || "";
@@ -37,18 +44,18 @@ const employeeRowSchema = z
     nombre_completo = nombre_completo.toUpperCase().trim();
 
     // Mapping additional attributes
-    const puesto = (data.Puesto || data.puesto || null);
+    const puesto = (data.Puesto || data.puesto || data["Posición"] || null);
     const centro_costos = (data["Centro de Costos"] || data.centro_costos || null);
-    const distrito = (data.Distrito || data.distrito || null);
-    const tienda = (data.Tienda || data.tienda || null);
+    const distrito = (data.Distrito || data.distrito || data["Atributo Distrito"] || null);
+    const tienda = (data.Tienda || data.tienda || data["Atributo Tienda"] || null);
 
     return {
       numero_empleado,
       nombre_completo,
-      puesto: puesto ? puesto.toUpperCase().trim() : null,
-      centro_costos: centro_costos ? centro_costos.toUpperCase().trim() : null,
-      distrito: distrito ? distrito.toUpperCase().trim() : null,
-      tienda: tienda ? tienda.toUpperCase().trim() : null,
+      puesto: puesto ? String(puesto).toUpperCase().trim() : null,
+      centro_costos: centro_costos ? String(centro_costos).toUpperCase().trim() : null,
+      distrito: distrito ? String(distrito).toUpperCase().trim() : null,
+      tienda: tienda ? String(tienda).toUpperCase().trim() : null,
     };
   })
   // Finally ensure the minimum required fields exist natively
@@ -136,33 +143,44 @@ exports.syncHeadcount = async (req, res, next) => {
     }
 
     // 5. Execute Transaction
+    // Helper function to chunk arrays
+    const chunkArray = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
+
     await prisma.$transaction(async (tx) => {
       // 5.1 Create new employees
       if (newEmployeesToInsert.length > 0) {
-        // use upsert inside createMany is not supported in sqlite typically if we have complex constraints but createMany directly throws if exists (maybe it was just soft-deleted, wait! If it's softly deleted, createMany throws unique constraint error!)
-        // So let's handle "new" by checking if it fully exists in DB at all to avoid unique constraint if it was marked "BAJA" previously.
-
-        const existingAll = await tx.employee.findMany({
-          where: { numero_empleado: { in: newEmployeesToInsert.map(e => e.numero_empleado) } },
-          select: { numero_empleado: true }
-        });
-        const existingSet = new Set(existingAll.map(e => e.numero_empleado));
-
-        const strictlyNew = newEmployeesToInsert.filter(e => !existingSet.has(e.numero_empleado));
-        const toReactivate = newEmployeesToInsert.filter(e => existingSet.has(e.numero_empleado));
-
-        if (strictlyNew.length > 0) {
-          await tx.employee.createMany({
-            data: strictlyNew.map((emp) => ({
-              numero_empleado: emp.numero_empleado,
-              nombre_completo: emp.nombre_completo,
-              puesto: emp.puesto,
-              centro_costos: emp.centro_costos,
-              distrito: emp.distrito,
-              tienda: emp.tienda,
-              estatus_rh: "ACTIVO",
-            })),
+        const strictlyNew = [];
+        const toReactivate = [];
+        
+        // Find existing to prevent createMany conflicts (run in chunks to prevent variable limit)
+        const newChunks = chunkArray(newEmployeesToInsert, 500);
+        for (const chunk of newChunks) {
+          const existingAll = await tx.employee.findMany({
+            where: { numero_empleado: { in: chunk.map(e => e.numero_empleado) } },
+            select: { numero_empleado: true }
           });
+          const existingSet = new Set(existingAll.map(e => e.numero_empleado));
+          
+          strictlyNew.push(...chunk.filter(e => !existingSet.has(e.numero_empleado)));
+          toReactivate.push(...chunk.filter(e => existingSet.has(e.numero_empleado)));
+        }
+
+        // Insert strictly new in chunks
+        if (strictlyNew.length > 0) {
+          const insertChunks = chunkArray(strictlyNew, 100); // 100 items * ~7 fields = ~700 vars < 999 SQLite limit
+          for (const chunk of insertChunks) {
+            await tx.employee.createMany({
+              data: chunk.map((emp) => ({
+                numero_empleado: emp.numero_empleado,
+                nombre_completo: emp.nombre_completo,
+                puesto: emp.puesto,
+                centro_costos: emp.centro_costos,
+                distrito: emp.distrito,
+                tienda: emp.tienda,
+                estatus_rh: "ACTIVO",
+              })),
+            });
+          }
         }
 
         // Reactivate soft-deleted employees that came back
@@ -172,7 +190,7 @@ exports.syncHeadcount = async (req, res, next) => {
             data: { 
               estatus_rh: "ACTIVO",
               nombre_completo: reactEmp.nombre_completo,
-              puesto: reactEmp.puesto, // Update optional info too
+              puesto: reactEmp.puesto, 
               centro_costos: reactEmp.centro_costos,
               distrito: reactEmp.distrito,
               tienda: reactEmp.tienda,
@@ -183,16 +201,19 @@ exports.syncHeadcount = async (req, res, next) => {
 
       // 5.2 Deactivate Bajas
       if (employeesBajaIds.length > 0) {
-        await tx.employee.updateMany({
-          where: { numero_empleado: { in: employeesBajaIds } },
-          data: { estatus_rh: "BAJA" },
-        });
+        const bajaChunks = chunkArray(employeesBajaIds, 500);
+        for (const chunk of bajaChunks) {
+          await tx.employee.updateMany({
+            where: { numero_empleado: { in: chunk } },
+            data: { estatus_rh: "BAJA" },
+          });
 
-        // 5.3 Unlink ServiceSlots
-        await tx.serviceSlot.updateMany({
-          where: { employee_id: { in: employeesBajaIds } },
-          data: { employee_id: null }, // unassign
-        });
+          // 5.3 Unlink ServiceSlots
+          await tx.serviceSlot.updateMany({
+            where: { employee_id: { in: chunk } },
+            data: { employee_id: null }, // unassign
+          });
+        }
       }
     });
 

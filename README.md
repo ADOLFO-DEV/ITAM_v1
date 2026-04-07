@@ -108,4 +108,10 @@ npm run prisma:push
 npm run prisma:generate
 ```
 
-test
+node scripts/sync-console.js -- Comando para sincronizar el headcount desde la consola
+
+node scripts/seed.js -- Comando para sembrar la base de datos con datos de prueba
+
+npx prisma migrate dev --name init -- Comando para crear la base de datos
+
+npx prisma studio -- Comando para abrir la interfaz de administración de la base de datos
