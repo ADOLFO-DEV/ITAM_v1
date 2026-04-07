@@ -236,3 +236,20 @@ exports.syncHeadcount = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getAllEmployees = async (req, res, next) => {
+  try {
+    const employees = await prisma.employee.findMany({
+      where: { estatus_rh: "ACTIVO" },
+      select: {
+        numero_empleado: true,
+        nombre_completo: true,
+        puesto: true,
+      },
+      orderBy: { nombre_completo: 'asc' }
+    });
+    res.json(employees);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -8,5 +8,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Sincronización de Headcount
 router.post("/sync", upload.single("file"), employeeController.syncHeadcount);
+router.get("/", employeeController.getAllEmployees);
 
 module.exports = router;

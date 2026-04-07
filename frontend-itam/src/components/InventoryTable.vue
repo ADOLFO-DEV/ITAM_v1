@@ -11,10 +11,14 @@
         
         <!-- Search -->
         <div class="flex items-center space-x-3 w-full sm:w-auto self-end">
+           <button @click="openCreateModal" class="rounded-md bg-[#F96302] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 whitespace-nowrap flex items-center">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+             Nuevo Activo
+           </button>
            <div class="relative rounded-md shadow-sm w-full sm:w-64">
-             <input type="text" v-model="filters.search" @keyup.enter="applyFilters" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-homedepot-orange sm:text-sm sm:leading-6" placeholder="Buscar IMEI, Teléfono..." />
+             <input type="text" v-model="filters.search" @keyup.enter="applyFilters" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6" placeholder="Buscar IMEI, Teléfono..." />
            </div>
-           <button @click="applyFilters" class="rounded-md bg-homedepot-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 whitespace-nowrap">
+           <button @click="applyFilters" class="rounded-md bg-white border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 whitespace-nowrap">
              Buscar
            </button>
         </div>
@@ -282,6 +286,11 @@ const getStatusBadgeClass = (status) => {
 
 const openEditModal = (slot) => {
   selectedSlot.value = slot;
+  isModalOpen.value = true;
+};
+
+const openCreateModal = () => {
+  selectedSlot.value = null; // null triggers "Alta" mode
   isModalOpen.value = true;
 };
 
