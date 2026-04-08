@@ -62,22 +62,27 @@
         </router-link>
       </nav>
 
-      <div class="p-4 border-t border-slate-700">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3 overflow-hidden">
-            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
-              <User class="w-4 h-4 text-slate-300" />
+        <div class="flex flex-col p-4 border-t border-slate-700 gap-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 overflow-hidden">
+              <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
+                <User class="w-4 h-4 text-slate-300" />
+              </div>
+              <div class="truncate pr-2">
+                <p class="text-sm font-medium truncate">{{ userName }}</p>
+                <p class="text-xs text-slate-400 truncate">{{ userEmail }}</p>
+              </div>
             </div>
-            <div class="truncate pr-2">
-              <p class="text-sm font-medium truncate">{{ userName }}</p>
-              <p class="text-xs text-slate-400 truncate">{{ userEmail }}</p>
+            <div class="flex items-center gap-1">
+              <button @click="isChangePasswordOpen = true" title="Cambiar Contraseña" class="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition-colors shrink-0">
+                <Key class="w-4 h-4" />
+              </button>
+              <button @click="handleLogout" title="Cerrar Sesión" class="p-2 text-slate-400 hover:text-red-400 rounded-md hover:bg-slate-800 transition-colors shrink-0">
+                <LogOut class="w-4 h-4" />
+              </button>
             </div>
           </div>
-          <button @click="handleLogout" title="Cerrar Sesión" class="p-2 text-slate-400 hover:text-red-400 rounded-md hover:bg-slate-800 transition-colors shrink-0">
-            <LogOut class="w-4 h-4" />
-          </button>
         </div>
-      </div>
     </aside>
 
     <!-- Main Content -->
@@ -99,13 +104,20 @@
         <router-view />
       </main>
     </div>
+
+    <!-- Password Modal -->
+    <ChangePasswordModal 
+      :isOpen="isChangePasswordOpen" 
+      @close="isChangePasswordOpen = false" 
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { LayoutDashboard, Smartphone, User, Bell, Users, LogOut, ClipboardList } from 'lucide-vue-next';
+import { LayoutDashboard, Smartphone, User, Bell, Users, LogOut, ClipboardList, Key } from 'lucide-vue-next';
+import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -117,6 +129,8 @@ const currentRouteName = computed(() => {
 const userName = ref('Cargando...');
 const userEmail = ref('');
 const userRole = ref('');
+
+const isChangePasswordOpen = ref(false);
 
 onMounted(() => {
   const userData = localStorage.getItem('itam_user');

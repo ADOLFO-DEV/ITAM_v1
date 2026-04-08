@@ -10,14 +10,14 @@
             <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
               <h3 class="text-xl font-bold leading-6 text-slate-800 mb-6 flex items-center">
                 <span class="w-2 h-6 rounded-full bg-[#F96302] mr-3"></span>
-                {{ isEditing ? 'Editando Activo:' : 'Nuevo Activo' }} <span v-if="isEditing" class="font-mono text-[#F96302] ml-2">{{ slotData.telefono || 'Sin Teléfono' }}</span>
+                {{ isEditing ? (isReadOnly ? 'Detalles del Activo:' : 'Editando Activo:') : 'Nuevo Activo' }} <span v-if="isEditing" class="font-mono text-[#F96302] ml-2">{{ slotData.telefono || 'Sin Teléfono' }}</span>
               </h3>
 
               <!-- Tabs modernizadas (Sólo si es Edición) -->
               <div v-if="isEditing" class="border-b border-slate-200 mb-6">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                   <button @click="activeTab = 'editar'" :class="[activeTab === 'editar' ? 'border-[#F96302] text-[#F96302]' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-semibold transition-colors duration-200']">
-                    Editar Información
+                    {{ isReadOnly ? 'Ver Información' : 'Editar Información' }}
                   </button>
                   <button @click="activeTab = 'historial'" :class="[activeTab === 'historial' ? 'border-[#F96302] text-[#F96302]' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-semibold transition-colors duration-200']">
                     Historial de Cambios
@@ -41,7 +41,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Teléfono (10 dígitos)</label>
                     <div class="mt-2 text-slate-400 relative">
-                      <input type="text" maxlength="10" placeholder="Ej. 5512345678" v-model="formData.telefono" class="block w-full font-mono rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                      <input type="text" maxlength="10" placeholder="Ej. 5512345678" v-model="formData.telefono" :disabled="isReadOnly" class="block w-full font-mono rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
 
@@ -49,7 +49,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">IMEI (15 dígitos)</label>
                     <div class="mt-2">
-                      <input type="text" maxlength="15" v-model="formData.imei" placeholder="Ej. 35XXXXXXXXXXXXXXXXX" class="block w-full font-mono rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                      <input type="text" maxlength="15" v-model="formData.imei" placeholder="Ej. 35XXXXXXXXXXXXXXXXX" :disabled="isReadOnly" class="block w-full font-mono rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
 
@@ -57,7 +57,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Modelo</label>
                     <div class="mt-2">
-                      <input type="text" v-model="formData.modelo" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                      <input type="text" v-model="formData.modelo" :disabled="isReadOnly" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
 
@@ -65,7 +65,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">SIM (ICCID)</label>
                     <div class="mt-2">
-                      <input type="text" v-model="formData.sim" placeholder="Ej. 89XXXXXXXXXXXXXXXXX" class="block w-full font-mono rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                      <input type="text" v-model="formData.sim" placeholder="Ej. 89XXXXXXXXXXXXXXXXX" :disabled="isReadOnly" class="block w-full font-mono rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
 
@@ -73,7 +73,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Gama</label>
                     <div class="mt-2">
-                      <select v-model="formData.gama" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 bg-white transition-all hover:bg-slate-50/50">
+                      <select v-model="formData.gama" :disabled="isReadOnly" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 bg-white transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed">
                         <option value="">Seleccionar gama</option>
                         <option value="BAJA">BAJA</option>
                         <option value="MEDIA">MEDIA</option>
@@ -89,7 +89,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Número de Empleado Asignado</label>
                     <div class="mt-2">
-                       <input type="text" v-model="formData.employee_id" placeholder="Ej. 123456" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                       <input type="text" v-model="formData.employee_id" placeholder="Ej. 123456" :disabled="isReadOnly" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
 
@@ -97,7 +97,7 @@
                   <div class="sm:col-span-1" v-if="formData.employee_id">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Centro de Costos (Tienda)</label>
                     <div class="mt-2 text-slate-400 relative">
-                      <input type="text" v-model="formData.centro_costos" placeholder="Ej. 8701" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 pr-10 transition-all hover:bg-slate-50/50" />
+                      <input type="text" v-model="formData.centro_costos" placeholder="Ej. 8701" :disabled="isReadOnly" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 pr-10 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                     <p class="text-[10px] text-slate-400 mt-1">* Se modificará para el empleado asignado.</p>
                   </div>
@@ -106,7 +106,7 @@
                   <div class="sm:col-span-1" v-if="formData.employee_id">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Correo (Empleado)</label>
                     <div class="mt-2 text-slate-400 relative">
-                      <input type="email" v-model="formData.correo" placeholder="ejemplo@institucion.mx" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 pr-10 transition-all hover:bg-slate-50/50" />
+                      <input type="email" v-model="formData.correo" placeholder="ejemplo@homedepot.com.mx" :disabled="isReadOnly" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 pr-10 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
 
@@ -114,7 +114,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Fecha de Inicio</label>
                     <div class="mt-2">
-                       <input type="date" v-model="formData.fecha_inicio" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                       <input type="date" v-model="formData.fecha_inicio" :disabled="isReadOnly" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
 
@@ -122,7 +122,7 @@
                   <div class="sm:col-span-1">
                     <label class="block text-sm font-semibold leading-6 text-slate-700">Próxima Renovación</label>
                     <div class="mt-2">
-                       <input type="date" v-model="formData.fecha_renovacion" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50" />
+                       <input type="date" v-model="formData.fecha_renovacion" :disabled="isReadOnly" class="block w-full rounded-xl border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-[#F96302] sm:text-sm sm:leading-6 px-4 transition-all hover:bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" />
                     </div>
                   </div>
                   
@@ -130,20 +130,20 @@
                   <div class="sm:col-span-2 border-t border-slate-100 pt-5 mt-2">
                     <label class="block text-sm font-semibold leading-6 text-slate-700 mb-3">Estatus del Activo</label>
                     <div class="flex items-center space-x-6">
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" v-model="formData.estatus" value="ACTIVO" class="form-radio h-5 w-5 text-emerald-500 border-slate-300 focus:ring-emerald-500" />
+                      <label class="inline-flex items-center" :class="{ 'cursor-pointer': !isReadOnly, 'opacity-70 cursor-not-allowed': isReadOnly }">
+                        <input type="radio" v-model="formData.estatus" value="ACTIVO" :disabled="isReadOnly" class="form-radio h-5 w-5 text-emerald-500 border-slate-300 focus:ring-emerald-500 disabled:bg-slate-100" />
                         <span class="ml-2 text-sm font-medium text-slate-700">ACTIVO</span>
                       </label>
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" v-model="formData.estatus" value="DISPONIBLE" class="form-radio h-5 w-5 text-blue-500 border-slate-300 focus:ring-blue-500" />
+                      <label class="inline-flex items-center" :class="{ 'cursor-pointer': !isReadOnly, 'opacity-70 cursor-not-allowed': isReadOnly }">
+                        <input type="radio" v-model="formData.estatus" value="DISPONIBLE" :disabled="isReadOnly" class="form-radio h-5 w-5 text-blue-500 border-slate-300 focus:ring-blue-500 disabled:bg-slate-100" />
                         <span class="ml-2 text-sm font-medium text-slate-700">DISPONIBLE</span>
                       </label>
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" v-model="formData.estatus" value="INACTIVO" class="form-radio h-5 w-5 text-rose-500 border-slate-300 focus:ring-rose-500" />
+                      <label class="inline-flex items-center" :class="{ 'cursor-pointer': !isReadOnly, 'opacity-70 cursor-not-allowed': isReadOnly }">
+                        <input type="radio" v-model="formData.estatus" value="INACTIVO" :disabled="isReadOnly" class="form-radio h-5 w-5 text-rose-500 border-slate-300 focus:ring-rose-500 disabled:bg-slate-100" />
                         <span class="ml-2 text-sm font-medium text-slate-700">INACTIVO</span>
                       </label>
-                      <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" v-model="formData.estatus" value="BAJA" class="form-radio h-5 w-5 text-rose-700 border-slate-300 focus:ring-rose-700" />
+                      <label class="inline-flex items-center" :class="{ 'cursor-pointer': !isReadOnly, 'opacity-70 cursor-not-allowed': isReadOnly }">
+                        <input type="radio" v-model="formData.estatus" value="BAJA" :disabled="isReadOnly" class="form-radio h-5 w-5 text-rose-700 border-slate-300 focus:ring-rose-700 disabled:bg-slate-100" />
                         <span class="ml-2 text-sm font-medium text-slate-700">BAJA</span>
                       </label>
                     </div>
@@ -160,12 +160,12 @@
           </div>
         </div>
         <div class="bg-slate-50/80 backdrop-blur-sm px-6 py-4 sm:flex sm:flex-row-reverse border-t border-slate-100">
-          <button v-show="activeTab === 'editar'" type="button" :disabled="isSaving" @click="submitForm" class="inline-flex w-full justify-center rounded-xl bg-gradient-to-r from-[#F96302] to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-500/30 hover:shadow-orange-500/50 hover:from-orange-600 hover:to-orange-500 transition-all sm:ml-3 sm:w-auto disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+          <button v-if="!isReadOnly" v-show="activeTab === 'editar'" type="button" :disabled="isSaving" @click="submitForm" class="inline-flex w-full justify-center rounded-xl bg-gradient-to-r from-[#F96302] to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-500/30 hover:shadow-orange-500/50 hover:from-orange-600 hover:to-orange-500 transition-all sm:ml-3 sm:w-auto disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
             <svg v-if="isSaving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             {{ isSaving ? 'Procesando...' : (isEditing ? 'Guardar Cambios' : 'Crear Activo') }}
           </button>
           <button type="button" @click="$emit('close')" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-all sm:mt-0 sm:w-auto sm:ml-3 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2">
-            Cancelar
+            {{ isReadOnly ? 'Cerrar' : 'Cancelar' }}
           </button>
         </div>
       </div>
@@ -174,7 +174,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, computed } from 'vue';
+import { ref, reactive, watch, computed, onMounted } from 'vue';
 import api from '../api/axios';
 import AuditTimeline from './AuditTimeline.vue';
 
@@ -188,6 +188,7 @@ const emit = defineEmits(['close', 'saved']);
 const activeTab = ref('editar');
 const isSaving = ref(false);
 const errorMsg = ref('');
+const isReadOnly = ref(false);
 
 const formData = reactive({
   id: '',
@@ -204,10 +205,21 @@ const formData = reactive({
   fecha_renovacion: ''
 });
 
-// Guardar el estado original para calcular los cambios (Patch)
 const originalData = ref({});
 
 const isEditing = computed(() => !!props.slotData && !!props.slotData.id);
+
+onMounted(() => {
+  const userData = localStorage.getItem('itam_user');
+  if (userData) {
+    try {
+      const parsed = JSON.parse(userData);
+      isReadOnly.value = parsed.rol === 'VIEWER';
+    } catch (e) {
+      console.error(e);
+    }
+  }
+});
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {

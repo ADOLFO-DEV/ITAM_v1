@@ -11,7 +11,7 @@
         
         <!-- Search -->
         <div class="flex items-center space-x-3 w-full sm:w-auto self-end">
-           <button @click="openCreateModal" class="rounded-md bg-[#F96302] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 whitespace-nowrap flex items-center">
+           <button v-if="userRole !== 'VIEWER'" @click="openCreateModal" class="rounded-md bg-[#F96302] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 whitespace-nowrap flex items-center">
              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
              Nuevo Activo
            </button>
@@ -103,7 +103,7 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tienda / Distrito</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estatus</th>
                   <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                    <span class="sr-only">Editar</span>
+                    <span class="sr-only">Acciones</span>
                   </th>
                 </tr>
               </thead>
@@ -151,7 +151,9 @@
                     </span>
                   </td>
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                    <button @click.stop="openEditModal(item)" class="text-homedepot-orange hover:text-orange-900 font-semibold">Editar</button>
+                    <button @click.stop="openEditModal(item)" class="text-homedepot-orange hover:text-orange-900 font-semibold">
+                      {{ userRole === 'VIEWER' ? 'Ver' : 'Editar' }}
+                    </button>
                   </td>
                 </tr>
                 <tr v-if="items.length === 0">
@@ -233,6 +235,7 @@ const loading = ref(true);
 
 const isModalOpen = ref(false);
 const selectedSlot = ref(null);
+const userRole = ref('');
 
 const pagination = reactive({
   page: 1,
@@ -283,6 +286,15 @@ const loadData = async () => {
 };
 
 onMounted(() => {
+  const userData = localStorage.getItem('itam_user');
+  if (userData) {
+    try {
+      const parsed = JSON.parse(userData);
+      userRole.value = parsed.rol || 'VIEWER';
+    } catch (e) {
+      console.error(e);
+    }
+  }
   loadData();
 });
 
