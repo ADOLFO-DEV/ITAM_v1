@@ -310,6 +310,77 @@ exports.getDashboardStats = async (req, res, next) => {
       count: item._count._all
     }));
 
+    // --- NUEVO: Distribución por Distrito ---
+    const slotsWithEmployee = await prisma.serviceSlot.findMany({
+      where: { estatus: { in: ['ACTIVO', 'DISPONIBLE'] } },
+      include: { empleado: { select: { distrito: true } } }
+    });
+
+    const districtMap = {};
+    for (const slot of slotsWithEmployee) {
+      if (slot.empleado) {
+        const distrito = slot.empleado.distrito?.trim() || 'SIN DISTRITO';
+        districtMap[distrito] = (districtMap[distrito] || 0) + 1;
+      } else {
+        districtMap['SIN ASIGNAR'] = (districtMap['SIN ASIGNAR'] || 0) + 1;
+      }
+    }
+    
+    // Sort districts by count descending
+    const formatedDistrito = Object.keys(districtMap)
+      .map(d => ({ distrito: d, count: districtMap[d] }))
+      .sort((a, b) => b.count - a.count);
+
+    // --- NUEVO: Renovaciones Mensuales (1 a 18 meses en el futuro) ---
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() + 1); // Empezar en el mes siguiente
+    startDate.setDate(1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 18); // 18 Meses de ventana
+    endDate.setDate(0); // Último día del mes 18
+    endDate.setHours(23, 59, 59, 999);
+
+    const slotsToRenew = await prisma.serviceSlot.findMany({
+      where: {
+        fecha_renovacion: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      select: { fecha_renovacion: true }
+    });
+
+    const renovacionesMap = {};
+    for (const slot of slotsToRenew) {
+      if (!slot.fecha_renovacion) continue;
+      const monthStr = slot.fecha_renovacion.toISOString().substring(0, 7); // Formato "YYYY-MM"
+      renovacionesMap[monthStr] = (renovacionesMap[monthStr] || 0) + 1;
+    }
+
+    // Crear arreglo garantizando que cada mes del rango este representado (incluso si está en 0)
+    const formatedRenovaciones = [];
+    let currentMonthDate = new Date(startDate);
+    
+    // Helper to format Spanish month
+    const formatter = new Intl.DateTimeFormat('es-MX', { month: 'short', year: 'numeric' });
+    
+    for (let i = 0; i < 18; i++) {
+      const key = currentMonthDate.toISOString().substring(0, 7);
+      
+      // We capitalize the month explicitly Ex: "Abr 2026"
+      const labelData = formatter.format(currentMonthDate);
+      const label = labelData.charAt(0).toUpperCase() + labelData.slice(1);
+
+      formatedRenovaciones.push({
+        mesKey: key,
+        mesLabel: label,
+        count: renovacionesMap[key] || 0
+      });
+      currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+    }
+
     res.json({
       success: true,
       data: {
@@ -317,7 +388,9 @@ exports.getDashboardStats = async (req, res, next) => {
         activeAvailableSlots,
         totalCostoCompra,
         renovacionProxima,
-        gamaDistribution: formatedGama
+        gamaDistribution: formatedGama,
+        distritoDistribution: formatedDistrito,
+        renovacionesMensuales: formatedRenovaciones
       }
     });
   } catch (error) {
