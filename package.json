@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx prisma migrate deploy && node src/app.js",
-    "build": "npx prisma generate && npm install --prefix frontend-itam && npm run build --prefix frontend-itam && rm -rf src/public && mv frontend-itam/dist src/public",
+    "start": "npx prisma generate && npx prisma migrate deploy && node src/app.js",
+    "build": "npm install --prefix frontend-itam && npm run build --prefix frontend-itam && rm -rf src/public && mv frontend-itam/dist src/public",
     "dev": "nodemon src/app.js",
     "prisma:generate": "prisma generate --schema=./src/prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=./src/prisma/schema.prisma",
