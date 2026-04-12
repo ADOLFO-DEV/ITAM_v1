@@ -69,6 +69,6 @@ model AuditLog {
 }
 
 // 5. GENERADOR DE DIAGRAMA ERD
-generator erd {
-  provider = "prisma-erd-generator" 
-}
+// generator erd {
+//   provider = "prisma-erd-generator" 
+// }
