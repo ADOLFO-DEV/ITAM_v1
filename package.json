@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "npm run build",
     "start": "npx prisma generate && npx prisma migrate deploy && node src/app.js",
-    "build": "npm install --prefix frontend-itam && npm run build --prefix frontend-itam && rm -rf src/public && mv frontend-itam/dist src/public",
+    "build": "npm install --prefix frontend-itam --include=dev && npm run build --prefix frontend-itam && rm -rf src/public && mv frontend-itam/dist src/public",
     "dev": "nodemon src/app.js",
     "prisma:generate": "prisma generate --schema=./src/prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=./src/prisma/schema.prisma",

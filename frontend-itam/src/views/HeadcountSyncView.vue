@@ -209,7 +209,8 @@ const syncHeadcount = async () => {
   formData.append('file', file.value);
   
   try {
-    const response = await fetch('http://localhost:3000/api/employees/sync', {
+    const baseUrl = import.meta.env.VITE_API_URL || '/api';
+    const response = await fetch(`${baseUrl}/employees/sync`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
