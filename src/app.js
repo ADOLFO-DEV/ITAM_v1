@@ -47,10 +47,39 @@ app.get(/(.*)/, (req, res, next) => {
 const errorHandler = require("./middlewares/errorHandler");
 app.use(errorHandler);
 
+// Inicialización de DB efímera
+const initDB = async () => {
+  const { PrismaClient } = require('@prisma/client');
+  const bcrypt = require('bcryptjs');
+  const prisma = new PrismaClient();
+  try {
+    const adminExists = await prisma.systemUser.findFirst();
+    if (!adminExists) {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash('admin123', salt);
+      await prisma.systemUser.create({
+        data: {
+          email: 'admin@admin.com',
+          password_hash: hash,
+          nombre: 'Super Administrador',
+          rol: 'SUPERADMIN',
+          activo: true
+        }
+      });
+      console.log('✅ Usuario SuperAdmin creado automáticamente (admin@admin.com | admin123)');
+    }
+  } catch (error) {
+    console.log('Omitiendo inicialización de admin:', error.message);
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 // Start server
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
+    await initDB();
   });
 }
 
