@@ -35,7 +35,7 @@ app.get("/api/health", (req, res) => {
 });
 
 // Catch-all Route for Vue Router (History Mode)
-app.get("*", (req, res, next) => {
+app.get(/(.*)/, (req, res, next) => {
   // Ignorar rutas que empiecen con /api para que pasen al errorHandler si no fueron capturadas
   if (req.originalUrl.startsWith("/api")) {
     return next();
