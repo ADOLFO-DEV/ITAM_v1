@@ -233,9 +233,22 @@ exports.createServiceSlot = async (req, res, next) => {
   const { centro_costos, correo, ...slotData } = req.body;
   
   try {
-    // Normalizar fechas de string a Date si existen
-    if (slotData.fecha_inicio) slotData.fecha_inicio = new Date(slotData.fecha_inicio);
-    if (slotData.fecha_renovacion) slotData.fecha_renovacion = new Date(slotData.fecha_renovacion);
+    // Normalizar fechas de string a Date si existen, de lo contrario anular localmente para evitar error "" en Prisma
+    if (slotData.fecha_inicio) {
+      slotData.fecha_inicio = new Date(slotData.fecha_inicio);
+    } else {
+      slotData.fecha_inicio = null;
+    }
+
+    if (slotData.fecha_renovacion) {
+      slotData.fecha_renovacion = new Date(slotData.fecha_renovacion);
+    } else {
+      slotData.fecha_renovacion = null;
+    }
+
+    // Limpiar explícitamente cadenas vacías que podrían causar conflictos
+    if (slotData.imei === '') slotData.imei = null;
+    if (slotData.employee_id === '') slotData.employee_id = null;
 
     // 1. Crear el slot principal
     const newSlot = await prisma.serviceSlot.create({
