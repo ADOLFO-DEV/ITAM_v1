@@ -229,11 +229,33 @@ exports.patchServiceSlot = async (req, res, next) => {
 
 // POST /api/slots
 exports.createServiceSlot = async (req, res, next) => {
-  const { imei, telefono, ...data } = req.body;
+  // Destructurar campos que pertenecen a ServiceSlot y apartar los de Employee
+  const { centro_costos, correo, ...slotData } = req.body;
+  
   try {
+    // Normalizar fechas de string a Date si existen
+    if (slotData.fecha_inicio) slotData.fecha_inicio = new Date(slotData.fecha_inicio);
+    if (slotData.fecha_renovacion) slotData.fecha_renovacion = new Date(slotData.fecha_renovacion);
+
+    // 1. Crear el slot principal
     const newSlot = await prisma.serviceSlot.create({
-      data: { imei, telefono, ...data }
+      data: slotData
     });
+
+    // 2. Si se asignó a un empleado y trajeron centro_costos o correo, actualizamos el Empleado
+    if (newSlot.employee_id && (centro_costos !== undefined || correo !== undefined)) {
+      const employeeUpdateData = {};
+      if (centro_costos !== undefined) employeeUpdateData.centro_costos = centro_costos;
+      if (correo !== undefined && correo !== '') employeeUpdateData.email = correo;
+
+      if (Object.keys(employeeUpdateData).length > 0) {
+        await prisma.employee.update({
+          where: { numero_empleado: newSlot.employee_id },
+          data: employeeUpdateData
+        });
+      }
+    }
+
     res.status(201).json(newSlot);
   } catch (error) {
     next(error);
