@@ -2,6 +2,11 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+// Parche global para serialización de BigInt en res.json de Express
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -16,6 +21,7 @@ const authRoutes = require("./routes/auth.routes");
 const auditRoutes = require("./routes/audit.routes");
 const employeeRoutes = require("./routes/employee.routes");
 const userRoutes = require("./routes/user.routes");
+const adendumRoutes = require("./routes/adendum.routes");
 const authMiddleware = require("./middlewares/authMiddleware");
 
 app.use("/api/auth", authRoutes);
@@ -24,6 +30,7 @@ app.use("/api/stats", authMiddleware, statsRoutes);
 app.use("/api/logs", authMiddleware, auditRoutes);
 app.use("/api/employees", authMiddleware, employeeRoutes);
 app.use("/api/users", authMiddleware, userRoutes);
+app.use("/api/adendum", authMiddleware, adendumRoutes);
 
 // Health Check
 app.get("/", (req, res) => {

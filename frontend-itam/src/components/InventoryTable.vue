@@ -99,6 +99,7 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">IMEI</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Equipo</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Empleado</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Contrato</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tienda / Distrito</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estatus</th>
@@ -129,6 +130,21 @@
                       <div class="text-[10px] text-gray-400 uppercase mt-0.5 font-bold tracking-wide" v-if="item.empleado.puesto">{{ item.empleado.puesto }}</div>
                     </div>
                     <div v-else class="text-gray-400 italic">No asignado</div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <div v-if="item.adendum">
+                      <div class="text-xs">
+                        <span class="font-medium text-gray-700">Renta:</span> {{ item.adendum.renta_con_iva !== null ? `$${Number(item.adendum.renta_con_iva).toFixed(2)}` : 'N/A' }}
+                      </div>
+                      <div class="text-xs mt-1">
+                        <span class="font-medium text-gray-700">Fin:</span> {{ formatDate(item.adendum.fecha_fin_servicio) }}
+                      </div>
+                    </div>
+                    <div v-else>
+                      <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                        Sin Contrato
+                      </span>
+                    </div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <div class="text-xs">

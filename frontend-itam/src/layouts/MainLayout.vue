@@ -60,6 +60,17 @@
           <Users class="w-5 h-5" />
           <span class="font-medium">Sync Headcount</span>
         </router-link>
+
+        <!-- Sync Adendum Link (Admin only) -->
+        <router-link
+          v-if="userRole === 'SUPERADMIN' || userRole === 'ADMIN'"
+          to="/sync-adendum"
+          class="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-slate-800"
+          active-class="bg-slate-800 text-[#F96302]"
+        >
+          <ClipboardList class="w-5 h-5" />
+          <span class="font-medium">Reconciliar Adendum</span>
+        </router-link>
       </nav>
 
         <div class="flex flex-col p-4 border-t border-slate-700 gap-3">

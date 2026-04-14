@@ -8,7 +8,7 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
       <div v-for="(item, index) in statItems" :key="index"
            class="transition-all duration-500 ease-out fill-mode-both"
            :style="{ animationDelay: `${index * 100}ms`, animationName: 'fadeSlideUp' }">
@@ -97,7 +97,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { Smartphone, CheckCircle, DollarSign, Clock } from 'lucide-vue-next';
+import { Smartphone, CheckCircle, DollarSign, Clock, AlertTriangle } from 'lucide-vue-next';
 import StatCard from '../components/StatCard.vue';
 import api from '../api/axios';
 import { Bar, Doughnut, Line as LineChart } from 'vue-chartjs';
@@ -122,6 +122,7 @@ const stats = ref({
   activeAvailableSlots: 0,
   totalCostoCompra: 0,
   renovacionProxima: 0,
+  lineasConflicto: 0,
   gamaDistribution: [],
   distritoDistribution: [],
   renovacionesMensuales: []
@@ -188,12 +189,20 @@ const formattedCost = computed(() => {
   }).format(stats.value.totalCostoCompra);
 });
 
-const statItems = computed(() => [
-  { title: "Total de Activos", value: stats.value.totalSlots, theme: "blue", icon: Smartphone },
-  { title: "Activos Disponibles/Activos", value: stats.value.activeAvailableSlots, theme: "green", icon: CheckCircle },
-  { title: "Inversión Estimada", value: formattedCost.value, theme: "orange", icon: DollarSign },
-  { title: "Renovación (<90d)", value: stats.value.renovacionProxima, theme: "red", icon: Clock }
-]);
+const statItems = computed(() => {
+  const items = [
+    { title: "Total de Activos", value: stats.value.totalSlots, theme: "blue", icon: Smartphone },
+    { title: "Activos Disponibles/Activos", value: stats.value.activeAvailableSlots, theme: "green", icon: CheckCircle },
+    { title: "Inversión Estimada", value: formattedCost.value, theme: "orange", icon: DollarSign },
+    { title: "Renovación (<90d)", value: stats.value.renovacionProxima, theme: "blue", icon: Clock }
+  ];
+  if (stats.value.lineasConflicto > 0) {
+    items.unshift({ title: "Líneas en Conflicto", value: stats.value.lineasConflicto, theme: "red", icon: AlertTriangle });
+  } else {
+    items.push({ title: "Líneas en Conflicto", value: stats.value.lineasConflicto, theme: "green", icon: AlertTriangle });
+  }
+  return items;
+});
 
 const loadStats = async () => {
   try {

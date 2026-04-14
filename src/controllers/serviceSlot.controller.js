@@ -60,7 +60,8 @@ exports.getAllServiceSlots = async (req, res, next) => {
         skip: offset,
         take: limit,
         include: {
-          empleado: true
+          empleado: true,
+          adendum: true
         },
         orderBy: {
           updated_at: 'desc'
@@ -286,6 +287,14 @@ exports.getDashboardStats = async (req, res, next) => {
     });
     const totalCostoCompra = sumCostResult._sum.costo_compra || 0;
 
+    const lineasConflicto = await prisma.adendum.count({
+      where: {
+        estatus_suscripcion: {
+          in: ['NUEVO_CONTRATO', 'NO_ENCONTRADO_EN_MES_ACTUAL']
+        }
+      }
+    });
+
     const ninetyDaysFromNow = new Date();
     ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
 
@@ -388,6 +397,7 @@ exports.getDashboardStats = async (req, res, next) => {
         activeAvailableSlots,
         totalCostoCompra,
         renovacionProxima,
+        lineasConflicto,
         gamaDistribution: formatedGama,
         distritoDistribution: formatedDistrito,
         renovacionesMensuales: formatedRenovaciones

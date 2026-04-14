@@ -48,6 +48,12 @@ const routes = [
         name: 'SyncHeadcount',
         component: HeadcountSyncView,
         meta: { title: 'Sincronizar Headcount' }
+      },
+      {
+        path: 'sync-adendum',
+        name: 'SyncAdendum',
+        component: () => import('../views/AdendumSyncView.vue'),
+        meta: { title: 'Sincronizar Adendum' }
       }
     ]
   }

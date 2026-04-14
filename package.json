@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "dev:all": "npx concurrently -c \"blue,green,magenta\" -n \"backend,frontend,prisma\" \"npm run dev\" \"npm run dev --prefix frontend-itam\" \"npx prisma studio\"",
     "prisma:generate": "prisma generate --schema=./src/prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=./src/prisma/schema.prisma",
     "test": "echo \"Error: no test specified\" && exit 1"

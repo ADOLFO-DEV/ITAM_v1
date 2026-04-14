@@ -39,6 +39,9 @@ model ServiceSlot {
   employee_id     String?
   empleado        Employee? @relation(fields: [employee_id], references: [numero_empleado])
 
+  adendum_id      String?  @unique
+  adendum         Adendum? @relation(fields: [adendum_id], references: [id])
+
   // Campos actualizados
   telefono        String    @unique 
   imei            String?   @unique 
@@ -66,6 +69,21 @@ model AuditLog {
   valor_anterior  String?  
   valor_nuevo     String?  
   usuario_responsable String? 
+}
+
+model Adendum {
+  id                  String   @id @default(uuid())
+  telefono            String   @unique
+  region              String?
+  cuenta              BigInt?
+  razon_social        String?
+  iccid               BigInt?
+  imei_adendum        BigInt?
+  renta_con_iva       Float?
+  fecha_fin_servicio  DateTime?
+  estatus_suscripcion String   @default("ACTIVO")
+  
+  service_slot        ServiceSlot?
 }
 
 // 5. GENERADOR DE DIAGRAMA ERD
