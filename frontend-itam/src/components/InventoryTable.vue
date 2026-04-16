@@ -123,10 +123,10 @@
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <div v-if="item.empleado">
-                      <div class="font-medium text-gray-900">{{ item.empleado.nombre_completo }}</div>
-                      <div class="text-xs text-gray-500 mt-1" v-if="item.empleado.email">{{ item.empleado.email }}</div>
+                      <div class="font-medium text-gray-900"><PrivacyText>{{ item.empleado.nombre_completo }}</PrivacyText></div>
+                      <div class="text-xs text-gray-500 mt-1" v-if="item.empleado.email"><PrivacyText>{{ item.empleado.email }}</PrivacyText></div>
                       <div class="text-xs text-gray-500 mt-1" v-else>Sin correo</div>
-                      <div class="text-xs text-gray-500 mt-1">Num: {{ item.empleado.numero_empleado }}</div>
+                      <div class="text-xs text-gray-500 mt-1">Num: <PrivacyText>{{ item.empleado.numero_empleado }}</PrivacyText></div>
                       <div class="text-[10px] text-gray-400 uppercase mt-0.5 font-bold tracking-wide" v-if="item.empleado.puesto">{{ item.empleado.puesto }}</div>
                     </div>
                     <div v-else class="text-gray-400 italic">No asignado</div>
@@ -228,6 +228,7 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
+import PrivacyText from './PrivacyText.vue';
 import EditSlotModal from './EditSlotModal.vue';
 import api from '../api/axios';
 

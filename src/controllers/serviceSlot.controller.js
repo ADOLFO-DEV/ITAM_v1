@@ -230,12 +230,42 @@ exports.patchServiceSlot = async (req, res, next) => {
 
 // POST /api/slots
 exports.createServiceSlot = async (req, res, next) => {
-  const { imei, telefono, ...data } = req.body;
+  const { imei, telefono, centro_costos, correo, ...data } = req.body;
   try {
-    const newSlot = await prisma.serviceSlot.create({
-      data: { imei, telefono, ...data }
+    if (data.fecha_inicio) {
+      data.fecha_inicio = new Date(data.fecha_inicio);
+    } else {
+      delete data.fecha_inicio;
+    }
+
+    if (data.fecha_renovacion) {
+      data.fecha_renovacion = new Date(data.fecha_renovacion);
+    } else {
+      delete data.fecha_renovacion;
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const newSlot = await tx.serviceSlot.create({
+        data: { imei, telefono, ...data }
+      });
+
+      if ((centro_costos !== undefined || correo !== undefined) && newSlot.employee_id) {
+        const employeeUpdateData = {};
+        if (centro_costos !== undefined) employeeUpdateData.centro_costos = centro_costos;
+        if (correo !== undefined && correo !== '') employeeUpdateData.email = correo;
+
+        if (Object.keys(employeeUpdateData).length > 0) {
+          await tx.employee.update({
+            where: { numero_empleado: newSlot.employee_id },
+            data: employeeUpdateData
+          });
+        }
+      }
+
+      return newSlot;
     });
-    res.status(201).json(newSlot);
+
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }

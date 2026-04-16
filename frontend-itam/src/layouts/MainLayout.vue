@@ -104,6 +104,17 @@
           {{ currentRouteName }}
         </h2>
         <div class="flex items-center gap-4">
+          <!-- Privacy Toggle -->
+          <button @click="togglePrivacy" 
+            :class="[
+              'p-2 rounded-full transition-colors flex items-center justify-center shrink-0 w-9 h-9',
+              isPrivacyActive ? 'text-[#F96302] bg-orange-50 hover:bg-orange-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+            ]"
+            :title="isPrivacyActive ? 'Desactivar Modo Privacidad' : 'Activar Modo Privacidad'">
+            <EyeOff v-if="isPrivacyActive" class="w-5 h-5" />
+            <Eye v-else class="w-5 h-5" />
+          </button>
+          
           <button class="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
             <Bell class="w-5 h-5" />
           </button>
@@ -127,8 +138,11 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { LayoutDashboard, Smartphone, User, Bell, Users, LogOut, ClipboardList, Key } from 'lucide-vue-next';
+import { LayoutDashboard, Smartphone, User, Bell, Users, LogOut, ClipboardList, Key, Eye, EyeOff } from 'lucide-vue-next';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
+import { usePrivacyMode } from '../composables/usePrivacyMode';
+
+const { isPrivacyActive, togglePrivacy } = usePrivacyMode();
 
 const route = useRoute();
 const router = useRouter();

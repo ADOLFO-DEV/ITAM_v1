@@ -25,10 +25,10 @@ const excelDateToJSDate = (serial) => {
 
 // Zod Schema to validate and clean incoming row
 const AdendumSchema = z.object({
-  telefono: z.string().transform(s => s.replace(/\D/g, "")).refine(s => s.length > 0, "Teléfono es requerido"),
-  region: z.string().trim().optional().nullable(),
+  telefono: z.union([z.string(), z.number()]).transform(s => String(s).replace(/\D/g, "")).refine(s => s.length > 0, "Teléfono es requerido"),
+  region: z.union([z.string(), z.number()]).transform(s => String(s).trim()).optional().nullable(),
   cuenta: z.number().or(z.string()).transform(v => (v ? BigInt(v) : null)).optional().nullable(),
-  razon_social: z.string().trim().optional().nullable(),
+  razon_social: z.union([z.string(), z.number()]).transform(s => String(s).trim()).optional().nullable(),
   iccid: z.number().or(z.string()).transform(v => {
     let s = String(v).trim();
     // Assuming we want to force format, we handle floats from excel (like scientific notation e.g. 8.95E+18)
@@ -46,7 +46,11 @@ const AdendumSchema = z.object({
     }
     return s ? BigInt(s) : null;
   }).optional().nullable(),
-  renta_con_iva: z.number().or(z.string()).transform(v => (v ? Number(v) : null)).optional().nullable(),
+  renta_con_iva: z.union([z.string(), z.number()]).transform(v => {
+    if(!v) return null;
+    const num = Number(String(v).replace(/[^\d.-]/g, ''));
+    return isNaN(num) ? null : num;
+  }).optional().nullable(),
   fecha_fin_servicio: z.any().transform(excelDateToJSDate).optional().nullable(),
 }).refine(data => data.telefono && data.telefono.length > 0, "No valid phone");
 
@@ -70,7 +74,12 @@ exports.syncAdendum = async (req, res, next) => {
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     
-    const rows = xlsx.utils.sheet_to_json(sheet, { raw: true, defval: null });
+    // Find the actual header row (Telcel ADENDUMs often have meta-info in the first 2 rows)
+    const rawDataArr = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+    let headerIdx = rawDataArr.findIndex(row => row.includes('Telefono') || row.includes('Teléfono') || row.includes('ICCID'));
+    if (headerIdx === -1) headerIdx = 0;
+
+    const rows = xlsx.utils.sheet_to_json(sheet, { raw: true, defval: null, range: headerIdx });
 
     const added = [];
     const updated = []; // Only track real variations (renta)

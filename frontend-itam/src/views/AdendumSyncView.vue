@@ -27,10 +27,10 @@
         <form @submit.prevent="uploadFile" class="mt-5 sm:flex sm:items-center">
           <div class="w-full sm:max-w-xs">
             <label for="file-upload" class="sr-only">Archivo</label>
-            <input type="file" id="file-upload" ref="fileInput" accept=".xlsx, .xls"
+            <input type="file" id="file-upload" ref="fileInput" accept=".xlsx, .xls" @change="handleFileChange"
               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 border border-gray-300 rounded-md p-1" />
           </div>
-          <button type="submit" :disabled="uploading || !fileInput?.files?.length"
+          <button type="submit" :disabled="uploading || !hasFile"
             class="mt-3 inline-flex w-full items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:ml-3 sm:mt-0 sm:w-auto disabled:opacity-50">
             <svg v-if="uploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -137,9 +137,14 @@ import { ref, computed } from 'vue';
 import api from '../api/axios';
 
 const fileInput = ref(null);
+const hasFile = ref(false);
 const uploading = ref(false);
 const confirming = ref(false);
 const syncResult = ref(null);
+
+const handleFileChange = (e) => {
+  hasFile.value = !!e.target.files?.length;
+};
 
 const hasDiscrepancies = computed(() => {
   return syncResult.value?.missing?.length > 0 || syncResult.value?.added?.length > 0;
